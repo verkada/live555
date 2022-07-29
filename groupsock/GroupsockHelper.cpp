@@ -131,7 +131,7 @@ int setupDatagramSocket(UsageEnvironment& env, Port port, int domain) {
 #if defined(__WIN32__) || defined(_WIN32)
   // Windoze doesn't properly handle SO_REUSEPORT or IP_MULTICAST_LOOP
 #else
-#ifdef SO_REUSEPORT
+#if defined(SO_REUSEPORT) && !defined(BIGHEAD)
   if (setsockopt(newSocket, SOL_SOCKET, SO_REUSEPORT,
 		 (const char*)&reuseFlag, sizeof reuseFlag) < 0) {
     socketErr(env, "setsockopt(SO_REUSEPORT) error: ");
@@ -317,7 +317,7 @@ int setupStreamSocket(UsageEnvironment& env, Port port, int domain,
 #if defined(__WIN32__) || defined(_WIN32)
   // Windoze doesn't properly handle SO_REUSEPORT
 #else
-#ifdef SO_REUSEPORT
+#ifdef defined(SO_REUSEPORT) && !defined(BIGHEAD)
   if (setsockopt(newSocket, SOL_SOCKET, SO_REUSEPORT,
 		 (const char*)&reuseFlag, sizeof reuseFlag) < 0) {
     socketErr(env, "setsockopt(SO_REUSEPORT) error: ");
