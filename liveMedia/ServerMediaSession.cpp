@@ -431,6 +431,10 @@ void ServerMediaSubsession::getAbsoluteTimeRange(char*& absStartTime, char*& abs
   absStartTime = absEndTime = NULL;
 }
 
+Boolean ServerMediaSubsession::exceedsMaxStreams() {
+  return False;
+}
+
 char const*
 ServerMediaSubsession::rangeSDPLine() const {
   // First, check for the special case where we support seeking by 'absolute' time:

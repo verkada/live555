@@ -179,6 +179,8 @@ public:
   virtual void getAbsoluteTimeRange(char*& absStartTime, char*& absEndTime) const;
     // Subclasses can reimplement this iff they support seeking by 'absolute' time.
 
+  virtual Boolean exceedsMaxStreams();
+
 protected: // we're a virtual base class
   ServerMediaSubsession(UsageEnvironment& env);
   virtual ~ServerMediaSubsession();

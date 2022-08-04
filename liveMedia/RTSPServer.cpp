@@ -1554,15 +1554,20 @@ void RTSPServer::RTSPClientSession
     // (in case we're a multi-homed server):
     struct sockaddr_storage sourceAddr; SOCKLEN_T namelen = sizeof sourceAddr;
     getsockname(fOurClientConnection->fClientInputSocket, (struct sockaddr*)&sourceAddr, &namelen);
-    
-    subsession->getStreamParameters(fOurSessionId, fOurClientConnection->fClientAddr,
+
+    // get stream parameters, if theres too many references, fOurClientConnection->handleCmd_bad();
+    if (subsession->exceedsMaxStreams()) {
+      fOurClientConnection->handleCmd_bad();
+      break;
+    } else {
+      subsession->getStreamParameters(fOurSessionId, fOurClientConnection->fClientAddr,
 				    clientRTPPort, clientRTCPPort,
 				    fStreamStates[trackNum].tcpSocketNum, rtpChannelId, rtcpChannelId,
                                     &fOurClientConnection->fTLS,
 				    destinationAddress, destinationTTL, fIsMulticast,
 				    serverRTPPort, serverRTCPPort,
 				    fStreamStates[trackNum].streamToken);
-    
+    }
     AddressString destAddrStr(destinationAddress);
     AddressString sourceAddrStr(sourceAddr);
     char timeoutParameterString[100];
