@@ -25,13 +25,14 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 OnDemandServerMediaSubsession
 ::OnDemandServerMediaSubsession(UsageEnvironment& env,
 				Boolean reuseFirstSource,
+				u_int8_t maxStreams,
 				portNumBits initialPortNum,
 				Boolean multiplexRTCPWithRTP)
   : ServerMediaSubsession(env),
     fSDPLines(NULL), fMIKEYStateMessage(NULL), fMIKEYStateMessageSize(0),
     fReuseFirstSource(reuseFirstSource),
     fMultiplexRTCPWithRTP(multiplexRTCPWithRTP), fLastStreamToken(NULL),
-    fAppHandlerTask(NULL), fAppHandlerClientData(NULL) {
+    fAppHandlerTask(NULL), fAppHandlerClientData(NULL), fMaxStreams(maxStreams) {
   fDestinationsHashTable = HashTable::create(ONE_WORD_HASH_KEYS);
   if (fMultiplexRTCPWithRTP) {
     fInitialPortNum = initialPortNum;
@@ -429,6 +430,13 @@ void OnDemandServerMediaSubsession
   if (streamState != NULL) {
     streamState->sendRTCPAppPacket(subtype, name, appDependentData, appDependentDataSize);
   }
+}
+
+u_int8_t OnDemandServerMediaSubsession::getStreamCount() {
+  if (fLastStreamToken != NULL) {
+    return (u_int8_t) ((StreamState*)fLastStreamToken)->referenceCount();
+  }
+  return 0;
 }
 
 void OnDemandServerMediaSubsession

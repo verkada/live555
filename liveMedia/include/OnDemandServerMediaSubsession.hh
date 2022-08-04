@@ -38,6 +38,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 class OnDemandServerMediaSubsession: public ServerMediaSubsession {
 protected: // we're a virtual base class
   OnDemandServerMediaSubsession(UsageEnvironment& env, Boolean reuseFirstSource,
+				u_int8_t maxStreams = 10,
 				portNumBits initialPortNum = 6970,
 				Boolean multiplexRTCPWithRTP = False);
   virtual ~OnDemandServerMediaSubsession();
@@ -126,6 +127,8 @@ public:
     // of "name" are used.  (If "name" has fewer than 4 bytes, or is NULL,
     // then the remaining bytes are '\0'.)
 
+  u_int8_t getStreamCount();
+
 protected:
   void setSDPLinesFromRTPSink(RTPSink* rtpSink, FramedSource* inputSource,
 			      unsigned estBitrate);
@@ -142,6 +145,7 @@ private:
   portNumBits fInitialPortNum;
   Boolean fMultiplexRTCPWithRTP;
   void* fLastStreamToken;
+  u_int8_t fMaxStreams;
   char fCNAME[100]; // for RTCP
   RTCPAppHandlerFunc* fAppHandlerTask;
   void* fAppHandlerClientData;
