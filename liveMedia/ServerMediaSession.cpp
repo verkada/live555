@@ -435,6 +435,9 @@ Boolean ServerMediaSubsession::exceedsMaxStreams() {
   return False;
 }
 
+void ServerMediaSubsession::auditLog(const char* type, const char* address, u_int32_t session_id) {
+}
+
 char const*
 ServerMediaSubsession::rangeSDPLine() const {
   // First, check for the special case where we support seeking by 'absolute' time:
