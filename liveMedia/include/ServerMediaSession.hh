@@ -180,6 +180,7 @@ public:
     // Subclasses can reimplement this iff they support seeking by 'absolute' time.
 
   virtual Boolean exceedsMaxStreams();
+  virtual void auditLog(const char* type, const char* address, u_int32_t session_id);
 
 protected: // we're a virtual base class
   ServerMediaSubsession(UsageEnvironment& env);

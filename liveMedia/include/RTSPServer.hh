@@ -245,6 +245,7 @@ public: // should be protected, but some old compilers complain otherwise
     RTSPClientSession(RTSPServer& ourServer, u_int32_t sessionId);
     virtual ~RTSPClientSession();
 
+    void noteLiveness();
     friend class RTSPServer;
     friend class RTSPClientConnection;
     // Make the handler functions for each command virtual, to allow subclasses to redefine them:
