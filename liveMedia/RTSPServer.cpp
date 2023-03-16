@@ -1229,19 +1229,6 @@ RTSPServer::RTSPClientSession
     fTCPStreamIdCount(0), fNumStreamStates(0), fStreamStates(NULL) {
 }
 
-void RTSPServer::RTSPClientSession::noteLiveness() {
-  if (fOurServerMediaSession != NULL && fOurClientConnection != NULL) {
-    ServerMediaSubsessionIterator iter(*fOurServerMediaSession);
-    ServerMediaSubsession* subsession;
-    AddressString destAddrStr(fOurClientConnection->fClientAddr);
-    for (unsigned i = 0; i < fOurServerMediaSession->numSubsessions(); ++i) {
-      subsession = iter.next();
-      subsession->auditLog("CONTINUE", destAddrStr.val(), fOurSessionId);
-    }
-  }
-  GenericMediaServer::ClientSession::noteLiveness();
-}
-
 RTSPServer::RTSPClientSession::~RTSPClientSession() {
   if (fOurServerMediaSession != NULL && fOurClientConnection != NULL) {
     ServerMediaSubsessionIterator iter(*fOurServerMediaSession);
