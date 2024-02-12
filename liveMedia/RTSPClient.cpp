@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2022 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2024 Live Networks, Inc.  All rights reserved.
 // A generic RTSP client
 // Implementation
 
@@ -276,7 +276,7 @@ Boolean RTSPClient::parseRTSPURL(char const* url,
       defaultPortNumber = 554;
       from = &url[rtspPrefixLength];
     } else if (_strncasecmp(url, rtspsPrefix, rtspsPrefixLength) == 0) {
-      useTLS();
+      fTLS.isNeeded = True;
       defaultPortNumber = 322;
       from = &url[rtspsPrefixLength];
     } else {
@@ -400,7 +400,8 @@ RTSPClient::RTSPClient(UsageEnvironment& env, char const* rtspURL,
     fInputSocketNum(-1), fOutputSocketNum(-1), fBaseURL(NULL), fTCPStreamIdCount(0),
     fLastSessionId(NULL), fSessionTimeoutParameter(0), fRequireStr(NULL),
     fSessionCookieCounter(0), fHTTPTunnelingConnectionIsPending(False),
-    fTLS(*this) {
+    fTLS(*this), fPOSTSocketTLS(*this) {
+  fInputTLS = fOutputTLS = &fTLS; // fOutputTLS will change if we're doing RTSP-over-HTTPS
   setBaseURL(rtspURL);
 
   fResponseBuffer = new char[responseBufferSize+1];
@@ -908,9 +909,10 @@ int RTSPClient::openConnection() {
     NetAddress destAddress;
     portNumBits urlPortNum;
     char const* urlSuffix;
+
     if (!parseRTSPURL(fBaseURL, username, password, destAddress, urlPortNum, &urlSuffix)) break;
+    if (urlPortNum == 322) fTLS.isNeeded = True; // port 322 is a special case: "rtsps"
     portNumBits destPortNum = fTunnelOverHTTPPortNum == 0 ? urlPortNum : fTunnelOverHTTPPortNum;
-    if (destPortNum == 322) useTLS(); // port 322 is a special case: "rtsps"
 
     if (username != NULL || password != NULL) {
       fCurrentAuthenticator.setUsernameAndPassword(username, password);
@@ -930,9 +932,9 @@ int RTSPClient::openConnection() {
     int connectResult = connectToServer(fInputSocketNum, destPortNum);
     if (connectResult < 0) break;
     else if (connectResult > 0) {
-      if (fTLS.isNeeded) {
+      if (fInputTLS->isNeeded) {
 	// We need to complete an additional TLS connection:
-	connectResult = fTLS.connect(fInputSocketNum);
+	connectResult = fInputTLS->connect(fInputSocketNum);
 	if (connectResult < 0) break;
 	if (connectResult > 0 && fVerbosityLevel >= 1) envir() << "...TLS connection completed\n";
       }
@@ -1277,13 +1279,13 @@ Boolean RTSPClient::handleSETUPResponse(MediaSubsession& subsession, char const*
     if (streamUsingTCP) {
       // Tell the subsession to receive RTP (and send/receive RTCP) over the RTSP stream:
       if (subsession.rtpSource() != NULL) {
-	subsession.rtpSource()->setStreamSocket(fInputSocketNum, subsession.rtpChannelId, &fTLS);
+	subsession.rtpSource()->setStreamSocket(fInputSocketNum, subsession.rtpChannelId, fInputTLS);
 	  // So that we continue to receive & handle RTSP commands and responses from the server
 	subsession.rtpSource()->enableRTCPReports() = False;
 	  // To avoid confusing the server (which won't start handling RTP/RTCP-over-TCP until "PLAY"), don't send RTCP "RR"s yet
 	increaseReceiveBufferTo(envir(), fInputSocketNum, 50*1024);
       }
-      if (subsession.rtcpInstance() != NULL) subsession.rtcpInstance()->setStreamSocket(fInputSocketNum, subsession.rtcpChannelId, &fTLS);
+      if (subsession.rtcpInstance() != NULL) subsession.rtcpInstance()->setStreamSocket(fInputSocketNum, subsession.rtcpChannelId, fInputTLS);
       RTPInterface::setServerRequestAlternativeByteHandler(envir(), fInputSocketNum, handleAlternativeRequestByte, this);
     } else {
       // Normal case.
@@ -1560,11 +1562,24 @@ void RTSPClient::responseHandlerForHTTP_GET1(int responseCode, char* responseStr
     fOutputSocketNum = setupStreamSocket(envir(), 0, fServerAddress.ss_family);
     if (fOutputSocketNum < 0) break;
     ignoreSigPipeOnSocket(fOutputSocketNum); // so that servers on the same host that killed don't also kill us
+    fOutputTLS = &fPOSTSocketTLS;
+    fOutputTLS->isNeeded = fInputTLS->isNeeded;
 
     fHTTPTunnelingConnectionIsPending = True;
     int connectResult = connectToServer(fOutputSocketNum, fTunnelOverHTTPPortNum);
     if (connectResult < 0) break; // an error occurred
-    else if (connectResult == 0) {
+    else if (connectResult > 0) {
+      if (fOutputTLS->isNeeded) {
+	// We need to complete an additional TLS connection:
+	connectResult = fOutputTLS->connect(fOutputSocketNum);
+	if (connectResult < 0) break;
+	if (connectResult > 0 && fVerbosityLevel >= 1) envir() << "...TLS connection completed\n";
+      }
+
+      if (connectResult > 0 && fVerbosityLevel >= 1) envir() << "...local connection opened\n";
+    }
+
+    if (connectResult == 0) {
       // A connection is pending.  Continue setting up RTSP-over-HTTP when the connection completes.
       // First, move the pending requests to the 'awaiting connection' queue:
       while ((request = fRequestsAwaitingHTTPTunneling.dequeue()) != NULL) {
@@ -1628,12 +1643,11 @@ void RTSPClient::connectionHandler1() {
       break;
     }
 
-    // The connection succeeded.  If the connection came about from an attempt to set up RTSP-over-HTTP, finish this now:
-    if (fHTTPTunnelingConnectionIsPending && !setupHTTPTunneling2()) break;
-
-    if (fTLS.isNeeded) {
+    // Note: Normally "fOutputTLS" == "fInputTLS" here, except when we're connecting
+    // to the second (i.e., "POST") connection when doing RTSP-over-HTTP:
+    if (fOutputTLS->isNeeded) {
       // We need to complete an additional TLS connection:
-      int tlsConnectResult = fTLS.connect(fInputSocketNum);
+      int tlsConnectResult = fOutputTLS->connect(fOutputSocketNum);
       if (tlsConnectResult < 0) break; // error in TLS connection
       if (tlsConnectResult > 0 && fVerbosityLevel >= 1) envir() << "...TLS connection completed\n";
       if (tlsConnectResult == 0) {
@@ -1644,6 +1658,9 @@ void RTSPClient::connectionHandler1() {
 	return;
       }
     }
+
+    // The connection succeeded.  If the connection came about from an attempt to set up RTSP-over-HTTP, finish this now:
+    if (fHTTPTunnelingConnectionIsPending && !setupHTTPTunneling2()) break;
 
     // The connection is complete.  Resume sending all pending requests:
     if (fVerbosityLevel >= 1) envir() << "...remote connection opened\n";
@@ -2009,16 +2026,16 @@ void RTSPClient::handleResponseBytes(int newBytesRead) {
 }
 
 int RTSPClient::write(const char* data, unsigned count) {
-      if (fTLS.isNeeded) {
-	return fTLS.write(data, count);
+      if (fOutputTLS->isNeeded) {
+	return fOutputTLS->write(data, count);
       } else {
-	return send(fOutputSocketNum, data, count, 0);
+	return send(fOutputSocketNum, data, count, MSG_NOSIGNAL);
       }
 }
 
 int RTSPClient::read(u_int8_t* buffer, unsigned bufferSize) {
-  if (fTLS.isNeeded) {
-    return fTLS.read(buffer, bufferSize);
+  if (fInputTLS->isNeeded) {
+    return fInputTLS->read(buffer, bufferSize);
   } else {
     struct sockaddr_storage dummy; // 'from' address - not used
     return readSocket(envir(), fInputSocketNum, buffer, bufferSize, dummy);

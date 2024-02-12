@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2022 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2024 Live Networks, Inc.  All rights reserved.
 // A generic RTSP client - for a single "rtsp://" URL
 // C++ header
 
@@ -195,8 +195,6 @@ public:
 
   char const* url() const { return fBaseURL; }
 
-  void useTLS() { fTLS.isNeeded = True; }
-
   static unsigned responseBufferSize;
 
 public: // Some compilers complain if this is "private:"
@@ -364,6 +362,9 @@ private:
 
   // Optional support for TLS:
   ClientTLSState fTLS;
+  ClientTLSState fPOSTSocketTLS; // used only for RTSP-over-HTTPS
+  ClientTLSState* fInputTLS;
+  ClientTLSState* fOutputTLS;
   friend class ClientTLSState;
 };
 
