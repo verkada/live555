@@ -30,10 +30,10 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #endif
 
 #ifndef REQUEST_BUFFER_SIZE
-#define REQUEST_BUFFER_SIZE 100000 // for incoming requests
+#define REQUEST_BUFFER_SIZE 20000 // for incoming requests
 #endif
 #ifndef RESPONSE_BUFFER_SIZE
-#define RESPONSE_BUFFER_SIZE 100000
+#define RESPONSE_BUFFER_SIZE 20000
 #endif
 
 // Typedef for a handler function that gets called when "lookupServerMediaSession()"
