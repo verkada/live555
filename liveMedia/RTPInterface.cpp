@@ -26,6 +26,11 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 
 ////////// Helper Functions - Definition //////////
 
+// Debugging flags - temporarily turned on
+#define DEBUG_SEND
+#define DEBUG_RECEIVE
+#define RTPINTERFACE_BLOCKING_WRITE_TIMEOUT_MS 5000
+
 // Helper routines and data structures, used to implement
 // sending/receiving RTP/RTCP over a TCP socket:
 
