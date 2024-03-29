@@ -1,0 +1,10 @@
+.vscode/
+liveMedia/*
+BasicUsageEnvironment/*
+UsageEnvironment/*
+groupsock/*
+hlsProxy/*
+mediaServer/*
+proxyServer/*
+liveMedia/*.o
+testProgs/*
