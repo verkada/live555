@@ -362,12 +362,19 @@ Boolean RTPInterface::sendRTPorRTCPPacketOverTCP(u_int8_t* packet, unsigned pack
     framingHeader[1] = streamChannelId;
     framingHeader[2] = (u_int8_t) ((packetSize&0xFF00)>>8);
     framingHeader[3] = (u_int8_t) (packetSize&0xFF);
-    if (!sendDataOverTCP(socketNum, tlsState, framingHeader, 4, False)) break;
-
-    if (!sendDataOverTCP(socketNum, tlsState, packet, packetSize, True)) break;
+    if (!sendDataOverTCP(socketNum, tlsState, framingHeader, 4, False)) {
 #ifdef DEBUG_SEND
-    fprintf(stderr, "sendRTPorRTCPPacketOverTCP: completed\n"); fflush(stderr);
+  fprintf(stderr, "sendDataOverTCP: sending %d bytes of framingHeader failed", 4); fflush(stderr);
 #endif
+      break;
+    }
+
+    if (!sendDataOverTCP(socketNum, tlsState, packet, packetSize, True)) {
+#ifdef DEBUG_SEND
+  fprintf(stderr, "sendDataOverTCP: sending %d bytes of packet failed", packetSize); fflush(stderr);
+#endif
+      break;
+    }
 
     return True;
   } while (0);
