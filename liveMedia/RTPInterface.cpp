@@ -392,43 +392,62 @@ Boolean RTPInterface::sendRTPorRTCPPacketOverTCP(u_int8_t* packet, unsigned pack
 Boolean RTPInterface::sendDataOverTCP(int socketNum, TLSState* tlsState,
 				      u_int8_t const* data, unsigned dataSize,
 				      Boolean forceSendToSucceed) {
-  int sendResult = (tlsState != NULL && tlsState->isNeeded)
-    ? tlsState->write((char const*)data, dataSize)
-    : send(socketNum, (char const*)data, dataSize, 0/*flags*/);
+  
+  int usetlsState = (tlsState != NULL && tlsState->isNeeded);
+  int sendResult = 0;
+  if (usetlsState) {
+    sendResult = tlsState->write((char const*)data, dataSize);
+  } else {
+    sendResult = send(socketNum, (char const*)data, dataSize, 0/*flags*/);
+  }
+    
+  int envirErrorno = envir().getErrno();
+
   if (sendResult < (int)dataSize) {
     // The TCP send() failed - at least partially.
 
     unsigned numBytesSentSoFar = sendResult < 0 ? 0 : (unsigned)sendResult;
-    if (numBytesSentSoFar > 0 || (forceSendToSucceed && envir().getErrno() == EAGAIN)) {
+    if (numBytesSentSoFar > 0 || (forceSendToSucceed && envirErrorno == EAGAIN)) {
       // The OS's TCP send buffer has filled up (because the stream's bitrate has exceeded
       // the capacity of the TCP connection!).
       // Force this data write to succeed, by blocking if necessary until it does:
       unsigned numBytesRemainingToSend = dataSize - numBytesSentSoFar;
 #ifdef DEBUG_SEND
-      fprintf(stderr, "sendDataOverTCP: resending %d-byte send (blocking)\n", numBytesRemainingToSend); fflush(stderr);
+      fprintf(stderr, "sendDataOverTCP: usetlsState: %d, sendResult: %d, resending %d-byte send (blocking)\n", usetlsState, sendResult, numBytesRemainingToSend); fflush(stderr);
 #endif
       makeSocketBlocking(socketNum, RTPINTERFACE_BLOCKING_WRITE_TIMEOUT_MS);
-      sendResult = (tlsState != NULL && tlsState->isNeeded)
-	? tlsState->write((char const*)(&data[numBytesSentSoFar]), numBytesRemainingToSend)
-	: send(socketNum, (char const*)(&data[numBytesSentSoFar]), numBytesRemainingToSend, 0/*flags*/);
+      
+      usetlsState = (tlsState != NULL && tlsState->isNeeded);
+      sendResult = 0;
+      if (usetlsState) {
+        sendResult = tlsState->write((char const*)(&data[numBytesSentSoFar]), numBytesRemainingToSend);
+      } else {
+        sendResult = send(socketNum, (char const*)(&data[numBytesSentSoFar]), numBytesRemainingToSend, 0/*flags*/);
+      }
+  
       makeSocketNonBlocking(socketNum);
+
       if ((unsigned)sendResult != numBytesRemainingToSend) {
-	// The blocking "send()" failed, or timed out.  In either case, we assume that the
-	// TCP connection has failed (or is 'hanging' indefinitely), and we stop using it
-	// (for both RTP and RTP).
-	// (If we kept using the socket here, the RTP or RTCP packet write would be in an
-	//  incomplete, inconsistent state.)
+      // The blocking "send()" failed, or timed out.  In either case, we assume that the
+      // TCP connection has failed (or is 'hanging' indefinitely), and we stop using it
+      // (for both RTP and RTP).
+      // (If we kept using the socket here, the RTP or RTCP packet write would be in an
+      //  incomplete, inconsistent state.)
 #ifdef DEBUG_SEND
-	fprintf(stderr, "sendDataOverTCP: blocking send() failed (delivering %d bytes out of %d); closing socket %d\n", sendResult, numBytesRemainingToSend, socketNum); fflush(stderr);
+	      fprintf(stderr, "sendDataOverTCP: usetlsState: %d, blocking send() failed (delivering %d bytes out of %d); closing socket %d\n", usetlsState, sendResult, numBytesRemainingToSend, socketNum); fflush(stderr);
 #endif
-	removeStreamSocket(socketNum, 0xFF);
-	return False;
+	      removeStreamSocket(socketNum, 0xFF);
+	      return False;
       }
 
       return True;
-    } else if (sendResult < 0 && envir().getErrno() != EAGAIN) {
+    } else if (sendResult < 0 && envirErrorno != EAGAIN) {
       // Because the "send()" call failed, assume that the socket is now unusable, so stop
       // using it (for both RTP and RTCP):
+#ifdef DEBUG_SEND
+	      fprintf(stderr, "sendDataOverTCP: send() failed, usetlsState: %d, sendResult: %d, dataSize: %d, envirErrorno: %d, socketNum: %d \n", usetlsState, sendResult, envirErrorno, dataSize, socketNum); fflush(stderr);
+#endif
+
       removeStreamSocket(socketNum, 0xFF);
     }
 
