@@ -23,6 +23,8 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "BitVector.hh"
 #include <GroupsockHelper.hh> // for "gettimeofday()"
 
+#include "Log.h"
+
 ////////// H264or5VideoStreamParser definition //////////
 
 class H264or5VideoStreamParser: public MPEGVideoStreamParser {
@@ -341,7 +343,7 @@ char const* nal_unit_type_description_h265[64] = {
 #ifdef DEBUG
 static unsigned numDebugTabs = 1;
 #define DEBUG_PRINT_TABS for (unsigned _i = 0; _i < numDebugTabs; ++_i) fprintf(stderr, "\t")
-#define DEBUG_PRINT(x) do { DEBUG_PRINT_TABS; fprintf(stderr, "%s: %d\n", #x, x); } while (0)
+#define DEBUG_PRINT(x) do { DEBUG_PRINT_TABS; Log.Debug(__FILE__, __LINE__, "%s: %d\n", #x, x); } while (0)
 #define DEBUG_STR(x) do { DEBUG_PRINT_TABS; fprintf(stderr, "%s\n", x); } while (0)
 class DebugTab {
 public:
@@ -1034,11 +1036,11 @@ unsigned H264or5VideoStreamParser::parse() {
       if (fHNumber == 264) {
 	u_int8_t nal_ref_idc = (fFirstByteOfNALUnit&0x60)>>5;
 	u_int8_t nal_unit_type = fFirstByteOfNALUnit&0x1F;
-	fprintf(stderr, "Parsed trailing %d-byte NAL-unit (nal_ref_idc: %d, nal_unit_type: %d (\"%s\"))\n",
+	Log.Trace(__FILE__, __LINE__, "Parsed trailing %d-byte NAL-unit (nal_ref_idc: %d, nal_unit_type: %d (\"%s\"))\n",
 		trailingNALUnitSize, nal_ref_idc, nal_unit_type, nal_unit_type_description_h264[nal_unit_type]);
       } else { // 265
 	u_int8_t nal_unit_type = (fFirstByteOfNALUnit&0x7E)>>1;
-	fprintf(stderr, "Parsed trailing %d-byte NAL-unit (nal_unit_type: %d (\"%s\"))\n",
+	Log.Trace(__FILE__, __LINE__, "Parsed trailing %d-byte NAL-unit (nal_unit_type: %d (\"%s\"))\n",
 		trailingNALUnitSize, nal_unit_type, nal_unit_type_description_h265[nal_unit_type]);
       }
 #endif
@@ -1080,13 +1082,13 @@ unsigned H264or5VideoStreamParser::parse() {
       nal_unit_type = fFirstByteOfNALUnit&0x1F;
 #ifdef DEBUG
       u_int8_t nal_ref_idc = (fFirstByteOfNALUnit&0x60)>>5;
-      fprintf(stderr, "Parsed %d-byte NAL-unit (nal_ref_idc: %d, nal_unit_type: %d (\"%s\"))\n",
+      Log.Trace(__FILE__, __LINE__, "Parsed %d-byte NAL-unit (nal_ref_idc: %d, nal_unit_type: %d (\"%s\"))\n",
 	      curFrameSize()-fOutputStartCodeSize, nal_ref_idc, nal_unit_type, nal_unit_type_description_h264[nal_unit_type]);
 #endif
     } else { // 265
       nal_unit_type = (fFirstByteOfNALUnit&0x7E)>>1;
 #ifdef DEBUG
-      fprintf(stderr, "Parsed %d-byte NAL-unit (nal_unit_type: %d (\"%s\"))\n",
+      Log.Trace(__FILE__, __LINE__, "Parsed %d-byte NAL-unit (nal_unit_type: %d (\"%s\"))\n",
 	      curFrameSize()-fOutputStartCodeSize, nal_unit_type, nal_unit_type_description_h265[nal_unit_type]);
 #endif
     }
@@ -1185,7 +1187,7 @@ unsigned H264or5VideoStreamParser::parse() {
 	
     if (thisNALUnitEndsAccessUnit) {
 #ifdef DEBUG
-      fprintf(stderr, "*****This NAL unit ends the current access unit*****\n");
+      Log.Trace(__FILE__, __LINE__, "*****This NAL unit ends the current access unit*****\n");
 #endif
       usingSource()->fPictureEndMarker = True;
       ++usingSource()->fPictureCount;
@@ -1203,7 +1205,7 @@ unsigned H264or5VideoStreamParser::parse() {
     return curFrameSize();
   } catch (int /*e*/) {
 #ifdef DEBUG
-    fprintf(stderr, "H264or5VideoStreamParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
+    Log.Trace(__FILE__, __LINE__, "H264or5VideoStreamParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
 #endif
     return 0;  // the parsing got interrupted
   }
