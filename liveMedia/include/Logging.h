@@ -23,15 +23,6 @@ string itoa(int integer) {
 }
 
 static string LogLevelAsString(LogLevel logLevel);
-static string FormatLog(const char* fileName, int line, LogLevel logLevel, const char * format) {
-  
-  string _format = string(format);
-  if( fileName != NULL ) {
-    _format += " [" + string(fileName) + string(":") + itoa(line) + "]";
-  }
-
-  return LogLevelAsString(LogLevelInfo) + string(" ") + string(_format) + "\n"; 
-}
 
 class _Log {
 private:
@@ -52,11 +43,13 @@ public:
   void OutputToFile(const char* filePath);
   void OutputToStdout(bool toStdout);
 
-  void Info(const char * format, ...);
-  void Debug(const char * format, ...);
-
+  void Panic(const char* filePath, int line, const char * format, ...);
+  void Fatal(const char* filePath, int line, const char * format, ...);
+  void Error(const char* filePath, int line, const char * format, ...);
+  void Warning(const char* filePath, int line, const char * format, ...);
   void Info(const char* filePath, int line, const char * format, ...);
   void Debug(const char* filePath, int line, const char * format, ...);
+  void Trace(const char* filePath, int line, const char * format, ...);
 };
 
 string LogLevelAsString(LogLevel logLevel) {
@@ -90,30 +83,51 @@ FILE* _Log::GetFile() {
 }
 
 /***
- * Simple logging functions
-***/
-
-void _Log::Info(const char * format, ...) {
-  va_list argptr; va_start(argptr, format);
-
-  vfprintf(GetFile(), FormatLog(NULL, 0, LogLevelInfo, format).c_str(), argptr);
-  fflush(GetFile());
-
-  va_end(argptr);
-}
-
-void _Log::Debug(const char * format, ...) {
-  va_list argptr; va_start(argptr, format);
-
-  vfprintf(GetFile(), FormatLog(NULL, 0, LogLevelDebug, format).c_str(), argptr);
-  fflush(GetFile());
-
-  va_end(argptr);
-}
-
-/***
  * Logging functions that take in file path and line number
 ***/
+
+static string FormatLog(string fileName, int line, LogLevel logLevel, const char * format) {
+  
+  string _format = string(format);
+  _format += " [" + string(fileName) + string(":") + itoa(line) + "]";
+  return LogLevelAsString(logLevel) + string(" ") + string(_format) + "\n"; 
+}
+
+void _Log::Panic(const char* filePath, int line, const char * format, ...) {
+  va_list argptr; va_start(argptr, format);
+
+  vfprintf(GetFile(), FormatLog(filePath, line, LogLevelPanic, format).c_str(), argptr);
+  fflush(GetFile());
+
+  va_end(argptr);
+}
+
+void _Log::Fatal(const char* filePath, int line, const char * format, ...) {
+  va_list argptr; va_start(argptr, format);
+
+  vfprintf(GetFile(), FormatLog(filePath, line, LogLevelFatal, format).c_str(), argptr);
+  fflush(GetFile());
+
+  va_end(argptr);
+}
+
+void _Log::Error(const char* filePath, int line, const char * format, ...) {
+  va_list argptr; va_start(argptr, format);
+
+  vfprintf(GetFile(), FormatLog(filePath, line, LogLevelError, format).c_str(), argptr);
+  fflush(GetFile());
+
+  va_end(argptr);
+}
+
+void _Log::Warning(const char* filePath, int line, const char * format, ...) {
+  va_list argptr; va_start(argptr, format);
+
+  vfprintf(GetFile(), FormatLog(filePath, line, LogLevelWarning, format).c_str(), argptr);
+  fflush(GetFile());
+
+  va_end(argptr);
+}
 
 void _Log::Info(const char* filePath, int line, const char * format, ...) {
   va_list argptr; va_start(argptr, format);
@@ -133,5 +147,13 @@ void _Log::Debug(const char* filePath, int line, const char * format, ...) {
   va_end(argptr);
 }
 
+void _Log::Trace(const char* filePath, int line, const char * format, ...) {
+  va_list argptr; va_start(argptr, format);
+
+  vfprintf(GetFile(), FormatLog(filePath, line, LogLevelTrace, format).c_str(), argptr);
+  fflush(GetFile());
+
+  va_end(argptr);
+}
 
 _Log Log;
