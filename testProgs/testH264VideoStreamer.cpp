@@ -30,6 +30,8 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "announceURL.hh"
 #include <GroupsockHelper.hh>
 
+#include "Logging.h"
+
 UsageEnvironment* env;
 char const* inputFileName = "test.264";
 H264VideoStreamFramer* videoSource;
@@ -38,6 +40,7 @@ RTPSink* videoSink;
 void play(); // forward
 
 int main(int argc, char** argv) {
+
   // Begin by setting up our usage environment:
   TaskScheduler* scheduler = BasicTaskScheduler::createNew();
   env = BasicUsageEnvironment::createNew(*scheduler);
@@ -95,6 +98,11 @@ int main(int argc, char** argv) {
   // Start the streaming:
   *env << "Beginning streaming...\n";
   play();
+
+  Log.Debug("Debug Log %d %s", 100, inputFileName);
+  Log.Info("Info Log %d %s", 100, inputFileName);
+  Log.Debug(__FILE__, __LINE__, "Debug Log with file %d %s", 100, inputFileName);
+  Log.Info(__FILE__, __LINE__, "Info Log with file %d %s", 100, inputFileName);
 
   env->taskScheduler().doEventLoop(); // does not return
 
