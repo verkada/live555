@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
     *env << "Failed to create RTSP server: " << env->getResultMsg() << "\n";
     exit(1);
   }
-  ServerMediaSession* sms
+  ServerMediaSession* sms 
     = ServerMediaSession::createNew(*env, "testStream", inputFileName,
 		   "Session streamed by \"testH264VideoStreamer\"",
 					   True /*SSM*/);
@@ -98,15 +98,6 @@ int main(int argc, char** argv) {
   // Start the streaming:
   *env << "Beginning streaming...\n";
   play();
-
-  Log.SetLevel(LogLevelDebug);
-  Log.Panic(__FILE__, __LINE__, "Panic Log with file %d %s", 100, inputFileName);
-  Log.Fatal(__FILE__, __LINE__, "Fatal Log with file %d %s", 100, inputFileName);
-  Log.Error(__FILE__, __LINE__, "Error Log with file %d %s", 100, inputFileName);
-  Log.Warning(__FILE__, __LINE__, "Warning Log with file %d %s", 100, inputFileName);
-  Log.Info(__FILE__, __LINE__, "Info Log with file %d %s", 100, inputFileName);
-  Log.Debug(__FILE__, __LINE__, "Debug Log with file %d %s", 200, inputFileName);
-  Log.Trace(__FILE__, __LINE__, "Trace Log with file %d %s", 300, inputFileName);
 
   env->taskScheduler().doEventLoop(); // does not return
 

@@ -1127,11 +1127,11 @@ unsigned H264or5VideoStreamParser::parse() {
 	  usingSource()->fFrameRate = fParsedFrameRate
 	    = time_scale/(DeltaTfiDivisor*num_units_in_tick);
 #ifdef DEBUG
-	  fprintf(stderr, "Set frame rate to %f fps\n", usingSource()->fFrameRate);
+	  Log.Info(__FILE__, __LINE__, "Set frame rate to %f fps", usingSource()->fFrameRate);
 #endif
 	} else {
 #ifdef DEBUG
-	  fprintf(stderr, "\tThis \"Sequence Parameter Set\" NAL unit contained no frame rate information, so we use a default frame rate of %f fps\n", usingSource()->fFrameRate);
+	  Log.Warning(__FILE__, __LINE__, "This \"Sequence Parameter Set\" NAL unit contained no frame rate information, so we use a default frame rate of %f fps", usingSource()->fFrameRate);
 #endif
 	}
       }

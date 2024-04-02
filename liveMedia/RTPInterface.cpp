@@ -348,8 +348,7 @@ Boolean RTPInterface::sendRTPorRTCPPacketOverTCP(u_int8_t* packet, unsigned pack
 						 int socketNum, unsigned char streamChannelId,
 						 TLSState* tlsState) {
 #ifdef DEBUG_SEND
-  fprintf(stderr, "sendRTPorRTCPPacketOverTCP: %d bytes over channel %d (socket %d)\n",
-	  packetSize, streamChannelId, socketNum); fflush(stderr);
+  Log.Error(__FILE__, __LINE__, "sendRTPorRTCPPacketOverTCP: %d bytes over channel %d (socket %d)", packetSize, streamChannelId, socketNum); 
 #endif
   // Send a RTP/RTCP packet over TCP, using the encoding defined in RFC 2326, section 10.12:
   //     $<streamChannelId><packetSize><packet>
@@ -364,14 +363,14 @@ Boolean RTPInterface::sendRTPorRTCPPacketOverTCP(u_int8_t* packet, unsigned pack
     framingHeader[3] = (u_int8_t) (packetSize&0xFF);
     if (!sendDataOverTCP(socketNum, tlsState, framingHeader, 4, False)) {
 #ifdef DEBUG_SEND
-  fprintf(stderr, "sendDataOverTCP: sending %d bytes of framingHeader failed", 4); fflush(stderr);
+  Log.Error(__FILE__, __LINE__, "sendDataOverTCP: sending %d bytes of framingHeader failed", 4);
 #endif
       break;
     }
 
     if (!sendDataOverTCP(socketNum, tlsState, packet, packetSize, True)) {
 #ifdef DEBUG_SEND
-  fprintf(stderr, "sendDataOverTCP: sending %d bytes of packet failed", packetSize); fflush(stderr);
+  Log.Error(__FILE__, __LINE__, "sendDataOverTCP: sending %d bytes of packet failed", packetSize);
 #endif
       break;
     }
@@ -380,7 +379,7 @@ Boolean RTPInterface::sendRTPorRTCPPacketOverTCP(u_int8_t* packet, unsigned pack
   } while (0);
 
 #ifdef DEBUG_SEND
-  fprintf(stderr, "sendRTPorRTCPPacketOverTCP: failed! (errno %d)\n", envir().getErrno()); fflush(stderr);
+  Log.Error(__FILE__, __LINE__, "sendRTPorRTCPPacketOverTCP: failed! (errno %d)", envir().getErrno());
 #endif
   return False;
 }
