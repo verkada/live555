@@ -174,7 +174,7 @@ void MPEGVideoStreamFramer::continueReadProcessing() {
       = (fFrameRate == 0.0 || ((int)fPictureCount) < 0) ? 0
       : (unsigned)((fPictureCount*1000000)/fFrameRate);
 #ifdef DEBUG
-    Log.Trace(__FILE__, __LINE__, "%d bytes @%u.%06d, fDurationInMicroseconds: %d ((%d*1000000)/%f)\n", acquiredFrameSize, fPresentationTime.tv_sec, fPresentationTime.tv_usec, fDurationInMicroseconds, fPictureCount, fFrameRate);
+    Log.Trace(__FILE__, __LINE__, "%d bytes @%u.%06d, fDurationInMicroseconds: %d ((%d*1000000)/%f)", acquiredFrameSize, fPresentationTime.tv_sec, fPresentationTime.tv_usec, fDurationInMicroseconds, fPictureCount, fFrameRate);
 #endif
     fPictureCount = 0;
 

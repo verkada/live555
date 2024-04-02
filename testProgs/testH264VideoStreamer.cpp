@@ -99,6 +99,7 @@ int main(int argc, char** argv) {
   *env << "Beginning streaming...\n";
   play();
 
+  Log.SetLevel(LogLevelDebug);
   Log.Panic(__FILE__, __LINE__, "Panic Log with file %d %s", 100, inputFileName);
   Log.Fatal(__FILE__, __LINE__, "Fatal Log with file %d %s", 100, inputFileName);
   Log.Error(__FILE__, __LINE__, "Error Log with file %d %s", 100, inputFileName);

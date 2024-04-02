@@ -25,6 +25,8 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #define snprintf _snprintf
 #endif
 
+#include "Log.h"
+
 ////////// RTCPMemberDatabase //////////
 
 class RTCPMemberDatabase {
@@ -581,7 +583,7 @@ void RTCPInstance
       switch (pt) {
         case RTCP_PT_SR: {
 #ifdef DEBUG
-	  fprintf(stderr, "SR\n");
+	  Log.Trace(__FILE__, __LINE__, "SR");
 #endif
 	  if (length < 20) break; length -= 20;
 
@@ -604,7 +606,7 @@ void RTCPInstance
 	}
         case RTCP_PT_RR: {
 #ifdef DEBUG
-	  fprintf(stderr, "RR\n");
+	  Log.Trace(__FILE__, __LINE__, "RR");
 #endif
 	  unsigned reportBlocksSize = rc*(6*4);
 	  if (length < reportBlocksSize) break;
@@ -719,7 +721,7 @@ void RTCPInstance
         case RTCP_PT_SDES: {
 #ifdef DEBUG
 	  // 'Handle' SDES packets only in debugging code, by printing out the 'SDES items':
-	  fprintf(stderr, "SDES\n");
+	  Log.Trace(__FILE__, __LINE__, "SDES");
 
 	  // Process each 'chunk':
 	  Boolean chunkOK = False;
@@ -841,7 +843,7 @@ void RTCPInstance
       // need to check for (& handle) SSRC collision! #####
 
 #ifdef DEBUG
-      fprintf(stderr, "validated RTCP subpacket: rc:%d, pt:%d, bytes remaining:%d, report sender SSRC:0x%08x\n", rc, pt, length, reportSenderSSRC);
+      Log.Debug(__FILE__, __LINE__, "validated RTCP subpacket: rc:%d, pt:%d, bytes remaining:%d, report sender SSRC:0x%08x", rc, pt, length, reportSenderSSRC);
 #endif
 
       // Skip over any remaining bytes in this subpacket:
@@ -853,14 +855,14 @@ void RTCPInstance
 	break;
       } else if (packetSize < 4) {
 #ifdef DEBUG
-	fprintf(stderr, "extraneous %d bytes at end of RTCP packet!\n", packetSize);
+	Log.Warning(__FILE__, __LINE__, "extraneous %d bytes at end of RTCP packet!", packetSize);
 #endif
 	break;
       }
       rtcpHdr = ntohl(*(u_int32_t*)pkt);
       if ((rtcpHdr & 0xC0000000) != 0x80000000) {
 #ifdef DEBUG
-	fprintf(stderr, "bad RTCP subpacket: header 0x%08x\n", rtcpHdr);
+	Log.Warning(__FILE__, __LINE__, "bad RTCP subpacket: header 0x%08x", rtcpHdr);
 #endif
 	break;
       }
@@ -868,12 +870,12 @@ void RTCPInstance
 
     if (!packetOK) {
 #ifdef DEBUG
-      fprintf(stderr, "rejected bad RTCP subpacket: header 0x%08x\n", rtcpHdr);
+      Log.Warning(__FILE__, __LINE__, "rejected bad RTCP subpacket: header 0x%08x", rtcpHdr);
 #endif
       break;
     } else {
 #ifdef DEBUG
-      fprintf(stderr, "validated entire RTCP packet\n");
+      Log.Debug(__FILE__, __LINE__, "validated entire RTCP packet");
 #endif
     }
 
@@ -950,15 +952,25 @@ void RTCPInstance::sendBYE(char const* reason) {
   sendBuiltPacket();
 }
 
+#define MAX_INT_BUFFER 10
+std::string toHex(int integer) {
+  char buffer[MAX_INT_BUFFER]; // Buffer to hold the formatted string
+   snprintf(buffer, sizeof(buffer), "%02x", integer);
+   return std::string(buffer);
+}
+
 void RTCPInstance::sendBuiltPacket() {
 #ifdef DEBUG
-  fprintf(stderr, "sending RTCP packet\n");
+  std::string strLog;
+  
   unsigned char* p = fOutBuf->packet();
   for (unsigned i = 0; i < fOutBuf->curPacketSize(); ++i) {
-    if (i%4 == 0) fprintf(stderr," ");
-    fprintf(stderr, "%02x", p[i]);
+    if (i%4 == 0) strLog += " ";
+
+    strLog += toHex(p[i]);
   }
-  fprintf(stderr, "\n");
+  Log.Debug(__FILE__, __LINE__, "Sending RTCP packet of size %d: %s", fOutBuf->curPacketSize(), strLog.c_str());
+  
 #endif
   unsigned reportSize = fOutBuf->curPacketSize();
   if (fCrypto != NULL) { // Encrypt/tag the data before sending it:

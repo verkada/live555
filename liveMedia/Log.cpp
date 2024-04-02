@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <string>
 #include <stdlib.h>
+#include <sys/time.h>                   // gettimeofday
 
 #include "Log.h"
 
@@ -14,6 +15,34 @@ string itoa(int integer) {
   char buffer[MAX_INT_BUFFER]; // Buffer to hold the formatted string
    snprintf(buffer, sizeof(buffer), "%d", integer);
    return string(buffer);
+}
+
+/**
+ * Return current timestamp as string in syslog-ng format. Not re-entrant.
+ */
+static const char * timestamp()
+{
+	static char buffer[33];
+
+	struct timeval now;
+	struct tm *nowlocal;
+
+	// get and format timestamp
+	gettimeofday(&now, NULL);
+	nowlocal = localtime(&now.tv_sec);
+	strftime(buffer, 33, "%Y-%m-%dT%H:%M:%S.000000%z ", nowlocal);
+
+	// populate microseconds
+	char plusminus = buffer[26];
+	sprintf(buffer+20, "%06d", now.tv_usec);
+	buffer[26] = plusminus;
+
+	// convert from HHMM to HH:MM
+	buffer[31] = buffer[30];
+	buffer[30] = buffer[29];
+	buffer[29] = ':';
+
+	return buffer;
 }
 
 static string LogLevelAsString(LogLevel logLevel);
@@ -58,7 +87,7 @@ void _Log::SetLevel(LogLevel level) {
 
 static string FormatLog(string fileName, int line, LogLevel logLevel, const char * format) {
   
-  string _format = string(format);
+  string _format = string(timestamp()) + string(" ") + string(format);
   _format += " [" + string(fileName) + string(":") + itoa(line) + "]";
   return LogLevelAsString(logLevel) + string(" ") + string(_format) + "\n"; 
 }
