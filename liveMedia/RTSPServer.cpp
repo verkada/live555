@@ -707,7 +707,7 @@ void RTSPServer::RTSPClientConnection::handleRequestBytes(int newBytesRead) {
       // Either the client socket has died, or the request was too big for us.
       // Terminate this connection:
 #ifdef DEBUG
-      fprintf(stderr, "RTSPClientConnection[%p]::handleRequestBytes() read %d new bytes (of %d); terminating connection!\n", this, newBytesRead, fRequestBufferBytesLeft);
+      Log.Error(__FILE__, __LINE__, "RTSPClientConnection[%p]::handleRequestBytes() read %d new bytes (of %d); terminating connection!", this, newBytesRead, fRequestBufferBytesLeft);
 #endif
       fIsActive = False;
       break;
@@ -717,7 +717,7 @@ void RTSPServer::RTSPClientConnection::handleRequestBytes(int newBytesRead) {
     unsigned char* ptr = &fRequestBuffer[fRequestBytesAlreadySeen];
 #ifdef DEBUG
     ptr[newBytesRead] = '\0';
-    fprintf(stderr, "RTSPClientConnection[%p]::handleRequestBytes() %s %d new bytes:%s\n",
+    Log.Debug(__FILE__, __LINE__, "RTSPClientConnection[%p]::handleRequestBytes() %s %d new bytes:%s",
 	    this, numBytesRemaining > 0 ? "processing" : "read", newBytesRead, ptr);
 #endif
     
@@ -743,9 +743,9 @@ void RTSPServer::RTSPClientConnection::handleRequestBytes(int newBytesRead) {
 	unsigned decodedSize;
 	unsigned char* decodedBytes = base64Decode((char const*)(ptr-fBase64RemainderCount), numBytesToDecode, decodedSize);
 #ifdef DEBUG
-	fprintf(stderr, "Base64-decoded %d input bytes into %d new bytes:", numBytesToDecode, decodedSize);
-	for (unsigned k = 0; k < decodedSize; ++k) fprintf(stderr, "%c", decodedBytes[k]);
-	fprintf(stderr, "\n");
+	Log.Debug(__FILE__, __LINE__, "Base64-decoded %d input bytes into %d new bytes:", numBytesToDecode, decodedSize);
+  // TODO: might want to add data to log as well
+	// for (unsigned k = 0; k < decodedSize; ++k) fprintf(stderr, "%c", decodedBytes[k]);
 #endif
 	
 	// Copy the new decoded bytes in place of the old ones (we can do this because there are fewer decoded bytes than original):
@@ -805,14 +805,14 @@ void RTSPServer::RTSPClientConnection::handleRequestBytes(int newBytesRead) {
     // Check first for a bogus "Content-Length" value that would cause a pointer wraparound:
     if (tmpPtr + 2 + contentLength < tmpPtr + 2) {
 #ifdef DEBUG
-      fprintf(stderr, "parseRTSPRequestString() returned a bogus \"Content-Length:\" value: 0x%x (%d)\n", contentLength, (int)contentLength);
+      Log.Error(__FILE__, __LINE__, "parseRTSPRequestString() returned a bogus \"Content-Length:\" value: 0x%x (%d)", contentLength, (int)contentLength);
 #endif
       contentLength = 0;
       parseSucceeded = False;
     }
     if (parseSucceeded) {
 #ifdef DEBUG
-      fprintf(stderr, "parseRTSPRequestString() succeeded, returning cmdName \"%s\", urlPreSuffix \"%s\", urlSuffix \"%s\", CSeq \"%s\", Content-Length %u, with %d bytes following the message.\n", cmdName, urlPreSuffix, urlSuffix, cseq, contentLength, ptr + newBytesRead - (tmpPtr + 2));
+      Log.Debug(__FILE__, __LINE__, "parseRTSPRequestString() succeeded, returning cmdName \"%s\", urlPreSuffix \"%s\", urlSuffix \"%s\", CSeq \"%s\", Content-Length %u, with %d bytes following the message.\n", cmdName, urlPreSuffix, urlSuffix, cseq, contentLength, ptr + newBytesRead - (tmpPtr + 2));
 #endif
       // If there was a "Content-Length:" header, then make sure we've received all of the data that it specified:
       if (ptr + newBytesRead < tmpPtr + 2 + contentLength) break; // we still need more data; subsequent reads will give it to us 
@@ -927,7 +927,7 @@ void RTSPServer::RTSPClientConnection::handleRequestBytes(int newBytesRead) {
       }
     } else {
 #ifdef DEBUG
-      fprintf(stderr, "parseRTSPRequestString() failed; checking now for HTTP commands (for RTSP-over-HTTP tunneling)...\n");
+      Log.Error(__FILE__, __LINE__, "parseRTSPRequestString() failed; checking now for HTTP commands (for RTSP-over-HTTP tunneling)...\n");
 #endif
       // The request was not (valid) RTSP, but check for a special case: HTTP commands (for setting up RTSP-over-HTTP tunneling):
       char sessionCookie[RTSP_PARAM_STRING_MAX];
@@ -940,7 +940,7 @@ void RTSPServer::RTSPClientConnection::handleRequestBytes(int newBytesRead) {
       *fLastCRLF = '\r';
       if (parseSucceeded) {
 #ifdef DEBUG
-	fprintf(stderr, "parseHTTPRequestString() succeeded, returning cmdName \"%s\", urlSuffix \"%s\", sessionCookie \"%s\", acceptStr \"%s\"\n", cmdName, urlSuffix, sessionCookie, acceptStr);
+	Log.Debug(__FILE__, __LINE__, "parseHTTPRequestString() succeeded, returning cmdName \"%s\", urlSuffix \"%s\", sessionCookie \"%s\", acceptStr \"%s\"\n", cmdName, urlSuffix, sessionCookie, acceptStr);
 #endif
 	// Check that the HTTP command is valid for RTSP-over-HTTP tunneling: There must be a 'session cookie'.
 	Boolean isValidHTTPCmd = True;
@@ -974,14 +974,14 @@ void RTSPServer::RTSPClientConnection::handleRequestBytes(int newBytesRead) {
 	}
       } else {
 #ifdef DEBUG
-	fprintf(stderr, "parseHTTPRequestString() failed!\n");
+	Log.Error(__FILE__, __LINE__, "parseHTTPRequestString() failed!\n");
 #endif
 	handleCmd_bad();
       }
     }
     
 #ifdef DEBUG
-    fprintf(stderr, "sending response: %s", fResponseBuffer);
+    Log.Debug(__FILE__, __LINE__, "sending response: %s", fResponseBuffer);
 #endif
     unsigned const numBytesToWrite = strlen((char*)fResponseBuffer);
     if (fOutputTLS->isNeeded) {
@@ -1113,7 +1113,8 @@ Boolean RTSPServer::RTSPClientConnection
     // Next, the username has to be known to us:
     char const* password = authDB->lookupPassword(username);
 #ifdef DEBUG
-    fprintf(stderr, "lookupPassword(%s) returned password %s\n", username, password);
+    // we are not printing user name and password in log
+    // fprintf(stderr, "lookupPassword(%s) returned password %s\n", username, password);
 #endif
     if (password == NULL) break;
     fCurrentAuthenticator.setUsernameAndPassword(username, password, authDB->passwordsAreMD5());

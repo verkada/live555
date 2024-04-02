@@ -186,7 +186,7 @@ struct RRHandlerRecord {
 
 RTCPInstance::~RTCPInstance() {
 #ifdef DEBUG
-  fprintf(stderr, "RTCPInstance[%p]::~RTCPInstance()\n", this);
+  Log.Info(__FILE__, __LINE__, "RTCPInstance[%p]::~RTCPInstance()\n", this);
 #endif
   // Begin by sending a BYE.  We have to do this immediately, without
   // 'reconsideration', because "this" is going away.
@@ -918,7 +918,7 @@ void RTCPInstance::onReceive(int typeOfPacket, int totPacketSize, u_int32_t ssrc
 
 void RTCPInstance::sendReport() {
 #ifdef DEBUG
-  fprintf(stderr, "sending REPORT\n");
+  Log.Info(__FILE__, __LINE__, "sending REPORT");
 #endif
   // Begin by including a SR and/or RR report:
   if (!addReport()) return;
@@ -940,9 +940,9 @@ void RTCPInstance::sendReport() {
 void RTCPInstance::sendBYE(char const* reason) {
 #ifdef DEBUG
   if (reason != NULL) {
-    fprintf(stderr, "sending BYE (reason:%s)\n", reason);
+    Log.Info(__FILE__, __LINE__, "sending BYE (reason:%s)\n", reason);
   } else {
-    fprintf(stderr, "sending BYE\n");
+    Log.Info(__FILE__, __LINE__, "sending BYE\n");
   }
 #endif
   // The packet must begin with a SR and/or RR report:
@@ -1257,7 +1257,7 @@ void RTCPInstance::schedule(double nextTime) {
   double secondsToDelay = nextTime - dTimeNow();
   if (secondsToDelay < 0) secondsToDelay = 0;
 #ifdef DEBUG
-  fprintf(stderr, "schedule(%f->%f)\n", secondsToDelay, nextTime);
+  Log.Info(__FILE__, __LINE__, "schedule(%f->%f)", secondsToDelay, nextTime);
 #endif
   int64_t usToGo = (int64_t)(secondsToDelay * 1000000);
   nextTask() = envir().taskScheduler().scheduleDelayedTask(usToGo,
