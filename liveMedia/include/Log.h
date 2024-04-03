@@ -21,7 +21,7 @@ private:
 
   FILE* GetFile();
 public:
-  _Log() : logFile(NULL), logToStdout(false), logLevel(LogLevelTrace) {    
+  _Log() : logFile(NULL), logToStdout(false), logLevel(LogLevelDebug) {    
   }
 
   ~_Log() {

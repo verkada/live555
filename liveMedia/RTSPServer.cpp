@@ -24,6 +24,8 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "Base64.hh"
 #include <GroupsockHelper.hh>
 
+#include "Log.h"
+
 ////////// RTSPServer implementation //////////
 
 RTSPServer*
@@ -570,7 +572,7 @@ void RTSPServer::RTSPClientConnection::handleHTTPCmd_notFound() {
 
 void RTSPServer::RTSPClientConnection::handleHTTPCmd_OPTIONS() {
 #ifdef DEBUG
-  fprintf(stderr, "Handled HTTP \"OPTIONS\" request\n");
+  Log.Info(__FILE__, __LINE__, "Handled HTTP \"OPTIONS\" request\n");
 #endif
   // Construct a response to the "OPTIONS" command that notes that our special headers (for RTSP-over-HTTP tunneling) are allowed:
   snprintf((char*)fResponseBuffer, sizeof fResponseBuffer,
@@ -593,7 +595,7 @@ void RTSPServer::RTSPClientConnection::handleHTTPCmd_TunnelingGET(char const* se
   delete[] fOurSessionCookie; fOurSessionCookie = strDup(sessionCookie);
   fOurRTSPServer.fClientConnectionsForHTTPTunneling->Add(sessionCookie, (void*)this);
 #ifdef DEBUG
-  fprintf(stderr, "Handled HTTP \"GET\" request (client output socket: %d)\n", fClientOutputSocket);
+  Log.Info(__FILE__, __LINE__, "Handled HTTP \"GET\" request (client output socket: %d)\n", fClientOutputSocket);
 #endif
   
   // Construct our response:
@@ -623,7 +625,7 @@ Boolean RTSPServer::RTSPClientConnection
     return False;
   }
 #ifdef DEBUG
-  fprintf(stderr, "Handled HTTP \"POST\" request (client input socket: %d)\n", fClientInputSocket);
+  Log.Info(__FILE__, __LINE__, "Handled HTTP \"POST\" request (client input socket: %d)\n", fClientInputSocket);
 #endif
   
   // Change the previous "RTSPClientSession" object's input socket to ours.  It will be used for subsequent requests:
@@ -728,7 +730,7 @@ void RTSPServer::RTSPClientConnection::handleRequestBytes(int newBytesRead) {
 #ifdef DEBUG
 	Log.Debug(__FILE__, __LINE__, "Base64-decoded %d input bytes into %d new bytes:", numBytesToDecode, decodedSize);
   // TODO: might want to add data to log as well
-	// for (unsigned k = 0; k < decodedSize; ++k) fprintf(stderr, "%c", decodedBytes[k]);
+	// for (unsigned k = 0; k < decodedSize; ++k) Log.Info(__FILE__, __LINE__, "%c", decodedBytes[k]);
 #endif
 	
 	// Copy the new decoded bytes in place of the old ones (we can do this because there are fewer decoded bytes than original):
@@ -817,7 +819,7 @@ void RTSPServer::RTSPClientConnection::handleRequestBytes(int newBytesRead) {
       // (i.e., "rtsps" instead of "rtsp", or vice versa), then send back a 'redirect':
       if (urlIsRTSPS != fOurRTSPServer.fWeServeSRTP) {
 #ifdef DEBUG
-	fprintf(stderr, "Calling handleCmd_redirect()\n");
+	Log.Info(__FILE__, __LINE__, "Calling handleCmd_redirect()\n");
 #endif
 	handleCmd_redirect(urlSuffix);
       } else if (strcmp(cmdName, "OPTIONS") == 0) {
@@ -825,7 +827,7 @@ void RTSPServer::RTSPClientConnection::handleRequestBytes(int newBytesRead) {
 	// then treat this as an error:
 	if (requestIncludedSessionId && clientSession == NULL) {
 #ifdef DEBUG
-	  fprintf(stderr, "Calling handleCmd_sessionNotFound() (case 1)\n");
+	  Log.Info(__FILE__, __LINE__, "Calling handleCmd_sessionNotFound() (case 1)\n");
 #endif
 	  handleCmd_sessionNotFound();
 	} else {
@@ -871,7 +873,7 @@ void RTSPServer::RTSPClientConnection::handleRequestBytes(int newBytesRead) {
 	  playAfterSetup = clientSession->fStreamAfterSETUP;
 	} else if (areAuthenticated) {
 #ifdef DEBUG
-	  fprintf(stderr, "Calling handleCmd_sessionNotFound() (case 2)\n");
+	  Log.Info(__FILE__, __LINE__, "Calling handleCmd_sessionNotFound() (case 2)\n");
 #endif
 	  handleCmd_sessionNotFound();
 	}
@@ -884,7 +886,7 @@ void RTSPServer::RTSPClientConnection::handleRequestBytes(int newBytesRead) {
 	  clientSession->handleCmd_withinSession(this, cmdName, urlPreSuffix, urlSuffix, (char const*)fRequestBuffer);
 	} else {
 #ifdef DEBUG
-	  fprintf(stderr, "Calling handleCmd_sessionNotFound() (case 3)\n");
+	  Log.Info(__FILE__, __LINE__, "Calling handleCmd_sessionNotFound() (case 3)\n");
 #endif
 	  handleCmd_sessionNotFound();
 	}
@@ -1097,7 +1099,7 @@ Boolean RTSPServer::RTSPClientConnection
     char const* password = authDB->lookupPassword(username);
 #ifdef DEBUG
     // we are not printing user name and password in log
-    // fprintf(stderr, "lookupPassword(%s) returned password %s\n", username, password);
+    // Log.Info(__FILE__, __LINE__, "lookupPassword(%s) returned password %s\n", username, password);
 #endif
     if (password == NULL) break;
     fCurrentAuthenticator.setUsernameAndPassword(username, password, authDB->passwordsAreMD5());

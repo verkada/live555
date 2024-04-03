@@ -28,6 +28,22 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "Log.h"
 
 ////////// RTCPMemberDatabase //////////
+#define MAX_INT_BUFFER 10
+std::string toHex(int integer) {
+  char buffer[MAX_INT_BUFFER]; // Buffer to hold the formatted string
+   snprintf(buffer, sizeof(buffer), "%02x", integer);
+   return std::string(buffer);
+}
+
+std::string packetAsString(unsigned char* packet, int packetSize) {
+  std::string strPacket;
+  for (unsigned i = 0; i < packetSize; ++i) {
+    if (i%4 == 0) strPacket += " ";
+
+    strPacket += toHex(packet[i]);
+  }
+  return strPacket;
+}
 
 class RTCPMemberDatabase {
 public:
@@ -523,20 +539,13 @@ void RTCPInstance
     char* reason = NULL; // by default, unless/until a BYE packet with a 'reason' arrives
     unsigned char* pkt = fInBuf;
 
-#ifdef DEBUG
-    fprintf(stderr, "[%p]saw incoming RTCP packet (from ", this);
+#ifdef DEBUG    
     if (tcpSocketNum < 0) {
       // Note that "fromAddressAndPort" is valid only if we're receiving over UDP (not over TCP):
-      fprintf(stderr, "address %s, port %d", AddressString(fromAddressAndPort).val(), ntohs(portNum(fromAddressAndPort)));
+      Log.Debug(__FILE__, __LINE__, "[%p]saw incoming RTCP packet (from address %s, port %d): %s", this, AddressString(fromAddressAndPort).val(), ntohs(portNum(fromAddressAndPort)), packetAsString(pkt, packetSize).c_str());
     } else {
-      fprintf(stderr, "TCP socket #%d, stream channel id %d", tcpSocketNum, tcpStreamChannelId);
+      Log.Debug(__FILE__, __LINE__, "[%p]saw incoming RTCP packet TCP socket #%d, stream channel id %d: %s", this, tcpSocketNum, tcpStreamChannelId, packetAsString(pkt, packetSize).c_str());
     }
-    fprintf(stderr, ")\n");
-    for (unsigned i = 0; i < packetSize; ++i) {
-      if (i%4 == 0) fprintf(stderr, " ");
-      fprintf(stderr, "%02x", pkt[i]);
-    }
-    fprintf(stderr, "\n");
 #endif
     int totPacketSize = IP_UDP_HDR_SIZE + packetSize;
 
@@ -730,7 +739,7 @@ void RTCPInstance
 	    chunkOK = False; // until we learn otherwise
 
 	    u_int32_t SSRC_CSRC = ntohl(*(u_int32_t*)pkt); ADVANCE(4); length -= 4;
-	    fprintf(stderr, "\tSSRC/CSRC: 0x%08x\n", SSRC_CSRC);
+	    Log.Trace(__FILE__, __LINE__, "SSRC/CSRC: 0x%08x", SSRC_CSRC);
 
 	    // Process each 'SDES item' in the chunk:
 	    u_int8_t itemType = *pkt; ADVANCE(1); --length;
@@ -952,25 +961,9 @@ void RTCPInstance::sendBYE(char const* reason) {
   sendBuiltPacket();
 }
 
-#define MAX_INT_BUFFER 10
-std::string toHex(int integer) {
-  char buffer[MAX_INT_BUFFER]; // Buffer to hold the formatted string
-   snprintf(buffer, sizeof(buffer), "%02x", integer);
-   return std::string(buffer);
-}
-
 void RTCPInstance::sendBuiltPacket() {
 #ifdef DEBUG
-  std::string strLog;
-  
-  unsigned char* p = fOutBuf->packet();
-  for (unsigned i = 0; i < fOutBuf->curPacketSize(); ++i) {
-    if (i%4 == 0) strLog += " ";
-
-    strLog += toHex(p[i]);
-  }
-  Log.Debug(__FILE__, __LINE__, "Sending RTCP packet of size %d: %s", fOutBuf->curPacketSize(), strLog.c_str());
-  
+  Log.Debug(__FILE__, __LINE__, "Sending RTCP packet of size %d: %s", fOutBuf->curPacketSize(), packetAsString(fOutBuf->packet(), fOutBuf->curPacketSize()).c_str());  
 #endif
   unsigned reportSize = fOutBuf->curPacketSize();
   if (fCrypto != NULL) { // Encrypt/tag the data before sending it:

@@ -920,7 +920,7 @@ void H264or5VideoStreamParser::analyze_sei_data(u_int8_t nal_unit_type) {
 	payloadType == 133 ? "scalable_nesting" :
 	payloadType == 134 ? "region_refresh_info" : "reserved_sei_message";
     }
-    Log.Debug(__FILE__, __LINE__, "\tpayloadType %d (\"%s\"); payloadSize %d", payloadType, description, payloadSize);
+    Log.Debug(__FILE__, __LINE__, "payloadType %d (\"%s\"); payloadSize %d", payloadType, description, payloadSize);
 #endif
 
     analyze_sei_payload(payloadType, payloadSize, &sei[j]);
@@ -978,7 +978,7 @@ void H264or5VideoStreamParser
       usingSource()->fFrameRate = fParsedFrameRate
 	= fParsedFrameRate*(prevDeltaTfiDivisor/DeltaTfiDivisor);
 #ifdef DEBUG
-      fprintf(stderr, "Changed frame rate to %f fps\n", usingSource()->fFrameRate);
+      Log.Info(__FILE__, __LINE__, "Changed frame rate to %f fps\n", usingSource()->fFrameRate);
 #endif
     }
     // Ignore the rest of the payload (timestamps) for now... #####
@@ -1106,7 +1106,7 @@ unsigned H264or5VideoStreamParser::parse() {
 	  usingSource()->fFrameRate = fParsedFrameRate
 	    = time_scale/(DeltaTfiDivisor*num_units_in_tick);
 #ifdef DEBUG
-	  fprintf(stderr, "Set frame rate to %f fps\n", usingSource()->fFrameRate);
+	  Log.Info(__FILE__, __LINE__, "Set frame rate to %f fps\n", usingSource()->fFrameRate);
 #endif
 	} else {
 #ifdef DEBUG
