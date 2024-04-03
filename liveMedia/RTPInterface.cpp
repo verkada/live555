@@ -24,7 +24,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include <GroupsockHelper.hh>
 #include <stdio.h>
 
-#include "Log.h"
+#include <Log.hh>
 
 ////////// Helper Functions - Definition //////////
 
