@@ -21,7 +21,8 @@ private:
 
   FILE* GetFile();
 public:
-  _Log() : logFile(NULL), logToStdout(false), logLevel(LogLevelDebug) {    
+  _Log() : logFile(NULL), logToStdout(false), logLevel(LogLevelDebug) {
+    OutputToFile("/tmp/rtsp.log");
   }
 
   ~_Log() {
