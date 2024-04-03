@@ -70,6 +70,7 @@ $(LIVEMEDIA_LIB): $(LIVEMEDIA_LIB_OBJS) \
 	$(LIBRARY_LINK)$@ $(LIBRARY_LINK_OPTS) \
 		$(LIVEMEDIA_LIB_OBJS) $(LIBS_FOR_LIVEMEDIA_LIB)
 
+Log.$(CPP):			include/Log.hh
 Media.$(CPP):		include/Media.hh
 include/Media.hh:	include/liveMedia_version.hh
 MediaSource.$(CPP):	include/MediaSource.hh
