@@ -30,7 +30,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "announceURL.hh"
 #include <GroupsockHelper.hh>
 
-#include "Log.h"
+#include <Log.hh>
 
 UsageEnvironment* env;
 char const* inputFileName = "test.264";

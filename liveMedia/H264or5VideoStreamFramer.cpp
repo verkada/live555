@@ -23,7 +23,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "BitVector.hh"
 #include <GroupsockHelper.hh> // for "gettimeofday()"
 
-#include "Log.h"
+#include <Log.hh>
 
 ////////// H264or5VideoStreamParser definition //////////
 

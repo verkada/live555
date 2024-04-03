@@ -25,7 +25,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #define snprintf _snprintf
 #endif
 
-#include "Log.h"
+#include <Log.hh>
 
 ////////// RTCPMemberDatabase //////////
 #define MAX_INT_BUFFER 10

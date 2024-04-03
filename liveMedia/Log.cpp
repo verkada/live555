@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <sys/time.h>                   // gettimeofday
 
-#include "Log.h"
+#include <Log.hh>
 
 _Log Log;
 

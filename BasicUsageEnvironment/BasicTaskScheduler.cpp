@@ -26,8 +26,6 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include <unix.h>
 #endif
 
-#include "../../liveMedia/include/Log.h"
-
 ////////// BasicTaskScheduler //////////
 
 BasicTaskScheduler* BasicTaskScheduler::createNew(unsigned maxSchedulerGranularity) {
@@ -112,14 +110,14 @@ void BasicTaskScheduler::SingleStep(unsigned maxDelayTime) {
 	// Because this failure is often "Bad file descriptor" - which is caused by an invalid socket number (i.e., a socket number
 	// that had already been closed) being used in "select()" - we print out the sockets that were being used in "select()",
 	// to assist in debugging:
-	Log.Info(__FILE__, __LINE__, "socket numbers used in the select() call:");
+	fprintf(stderr, "socket numbers used in the select() call:");
 	for (int i = 0; i < 10000; ++i) {
 	  if (FD_ISSET(i, &fReadSet) || FD_ISSET(i, &fWriteSet) || FD_ISSET(i, &fExceptionSet)) {
-	    Log.Info(__FILE__, __LINE__, " %d(", i);
-	    if (FD_ISSET(i, &fReadSet)) Log.Info(__FILE__, __LINE__, "r");
-	    if (FD_ISSET(i, &fWriteSet)) Log.Info(__FILE__, __LINE__, "w");
-	    if (FD_ISSET(i, &fExceptionSet)) Log.Info(__FILE__, __LINE__, "e");
-	    Log.Info(__FILE__, __LINE__, ")");
+	    fprintf(stderr, " %d(", i);
+	    if (FD_ISSET(i, &fReadSet)) fprintf(stderr, "r");
+	    if (FD_ISSET(i, &fWriteSet)) fprintf(stderr, "w");
+	    if (FD_ISSET(i, &fExceptionSet)) fprintf(stderr, "e");
+	    fprintf(stderr, ")");
 	  }
 	}
 #endif
