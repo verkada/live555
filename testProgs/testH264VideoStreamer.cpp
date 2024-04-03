@@ -99,6 +99,8 @@ int main(int argc, char** argv) {
   *env << "Beginning streaming...\n";
   play();
 
+  Log.OutputToFile("/Users/adeel.abbas/Downloads/rtsp-issue/live555-logging/output.log");
+
   env->taskScheduler().doEventLoop(); // does not return
 
   return 0; // only to prevent compiler warning
