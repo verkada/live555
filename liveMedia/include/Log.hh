@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <string>
 #include <stdlib.h>
+#include <string.h>
 
 enum LogLevel {
   LogLevelPanic,
