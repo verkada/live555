@@ -22,7 +22,7 @@ private:
   FILE* GetFile();
 public:
   _Log() : logFile(NULL), logToStdout(false), logLevel(LogLevelDebug) {
-    OutputToFile("/mnt/internal/mmcblk0p5/log/live555.log");
+    OutputToFile("/mnt/ramdisk/live555.log");
   }
 
   ~_Log() {
