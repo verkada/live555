@@ -15,20 +15,18 @@ enum LogLevel {
 
 class _Log {
 private:
-  FILE*     logFile;
+  char      logFilePath[256];
   bool      logToStdout;
   LogLevel  logLevel;
 
-  FILE* GetFile();
+  FILE* AcquireFile();
+  void  ReleaseFile(FILE* logFileHandle);
 public:
-  _Log() : logFile(NULL), logToStdout(false), logLevel(LogLevelDebug) {
-    OutputToFile("/mnt/ramdisk/live555.log");
+  _Log() : logToStdout(false), logLevel(LogLevelDebug) {
+    strcpy(logFilePath, "/mnt/ramdisk/live555.log");
   }
 
   ~_Log() {
-    if( logFile != NULL ) {
-      fclose(logFile);
-    }    
   }
 
   void OutputToFile(const char* filePath);
