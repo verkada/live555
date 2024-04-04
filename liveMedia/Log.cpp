@@ -60,20 +60,39 @@ string LogLevelAsString(LogLevel logLevel) {
 }
 
 void _Log::OutputToFile(const char* filePath) {
-  logFile = fopen(filePath, "w");
+  strcpy(logFilePath, filePath);
 }
 
 void _Log::OutputToStdout(bool toStdout) {
   logToStdout = toStdout;
 }
 
-FILE* _Log::GetFile() {
-  if( logFile != NULL ) {    
-    return logFile;
-  }  else if (logToStdout) {
-    return stdout;
+FILE* _Log::AcquireFile() {
+  if( strcmp(logFilePath, "") == 0 ) {
+    if (logToStdout) {
+      return stdout;
+    } else {
+      return stderr;
+    }
   } else {
-    return stderr;
+    FILE* logFileHandle = fopen(logFilePath, "a");
+    if( logFileHandle == NULL ) {
+      strcpy(logFilePath, "/tmp/live555.log");
+      logFileHandle = fopen(logFilePath, "a");
+    }
+
+    return logFileHandle;
+  }
+}
+
+void _Log::ReleaseFile(FILE* logFileHandle) {
+  if( logFileHandle != NULL ) {
+    fflush(logFileHandle);
+
+    if( strcmp(logFilePath, "") != 0 ) {
+      // The file is not stdout or stderr, so we can close it
+      fclose(logFileHandle);
+    }
   }
 }
 
@@ -95,8 +114,9 @@ static string FormatLog(string fileName, int line, LogLevel logLevel, const char
 void _Log::Panic(const char* filePath, int line, const char * format, ...) {
   if( logLevel >= LogLevelPanic  ) {
     va_list argptr; va_start(argptr, format);
-    vfprintf(GetFile(), FormatLog(filePath, line, LogLevelPanic, format).c_str(), argptr);
-    fflush(GetFile());
+    FILE* fileHandle = AcquireFile();
+    vfprintf(fileHandle, FormatLog(filePath, line, LogLevelPanic, format).c_str(), argptr);
+    ReleaseFile(fileHandle);
     va_end(argptr);
   }
 }
@@ -104,8 +124,9 @@ void _Log::Panic(const char* filePath, int line, const char * format, ...) {
 void _Log::Fatal(const char* filePath, int line, const char * format, ...) {
   if( logLevel >= LogLevelFatal  ) {
     va_list argptr; va_start(argptr, format);
-    vfprintf(GetFile(), FormatLog(filePath, line, LogLevelFatal, format).c_str(), argptr);
-    fflush(GetFile());
+    FILE* fileHandle = AcquireFile();
+    vfprintf(fileHandle, FormatLog(filePath, line, LogLevelFatal, format).c_str(), argptr);
+    ReleaseFile(fileHandle);
     va_end(argptr);
   }
 }
@@ -113,8 +134,9 @@ void _Log::Fatal(const char* filePath, int line, const char * format, ...) {
 void _Log::Error(const char* filePath, int line, const char * format, ...) {
   if( logLevel >= LogLevelError  ) {
     va_list argptr; va_start(argptr, format);
-    vfprintf(GetFile(), FormatLog(filePath, line, LogLevelError, format).c_str(), argptr);
-    fflush(GetFile());
+    FILE* fileHandle = AcquireFile();
+    vfprintf(fileHandle, FormatLog(filePath, line, LogLevelError, format).c_str(), argptr);
+    ReleaseFile(fileHandle);
     va_end(argptr);
   }
 }
@@ -122,8 +144,9 @@ void _Log::Error(const char* filePath, int line, const char * format, ...) {
 void _Log::Warning(const char* filePath, int line, const char * format, ...) {
   if( logLevel >= LogLevelWarning  ) {
     va_list argptr; va_start(argptr, format);
-    vfprintf(GetFile(), FormatLog(filePath, line, LogLevelWarning, format).c_str(), argptr);
-    fflush(GetFile());
+    FILE* fileHandle = AcquireFile();
+    vfprintf(fileHandle, FormatLog(filePath, line, LogLevelWarning, format).c_str(), argptr);
+    ReleaseFile(fileHandle);
     va_end(argptr);
   }
 }
@@ -131,8 +154,9 @@ void _Log::Warning(const char* filePath, int line, const char * format, ...) {
 void _Log::Info(const char* filePath, int line, const char * format, ...) {
   if( logLevel >= LogLevelInfo  ) {
     va_list argptr; va_start(argptr, format);
-    vfprintf(GetFile(), FormatLog(filePath, line, LogLevelInfo, format).c_str(), argptr);
-    fflush(GetFile());
+    FILE* fileHandle = AcquireFile();
+    vfprintf(fileHandle, FormatLog(filePath, line, LogLevelInfo, format).c_str(), argptr);
+    ReleaseFile(fileHandle);
     va_end(argptr);
   }
 }
@@ -140,8 +164,9 @@ void _Log::Info(const char* filePath, int line, const char * format, ...) {
 void _Log::Debug(const char* filePath, int line, const char * format, ...) {
   if( logLevel >= LogLevelDebug  ) {
     va_list argptr; va_start(argptr, format);
-    vfprintf(GetFile(), FormatLog(filePath, line, LogLevelDebug, format).c_str(), argptr);
-    fflush(GetFile());
+    FILE* fileHandle = AcquireFile();
+    vfprintf(fileHandle, FormatLog(filePath, line, LogLevelDebug, format).c_str(), argptr);
+    ReleaseFile(fileHandle);
     va_end(argptr);
   }
 }
@@ -149,8 +174,9 @@ void _Log::Debug(const char* filePath, int line, const char * format, ...) {
 void _Log::Trace(const char* filePath, int line, const char * format, ...) {
   if( logLevel >= LogLevelTrace  ) {
     va_list argptr; va_start(argptr, format);
-    vfprintf(GetFile(), FormatLog(filePath, line, LogLevelTrace, format).c_str(), argptr);
-    fflush(GetFile());
+    FILE* fileHandle = AcquireFile();
+    vfprintf(fileHandle, FormatLog(filePath, line, LogLevelTrace, format).c_str(), argptr);
+    ReleaseFile(fileHandle);
     va_end(argptr);
   }
 }

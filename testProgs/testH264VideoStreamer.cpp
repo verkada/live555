@@ -41,6 +41,7 @@ void play(); // forward
 
 int main(int argc, char** argv) {
 
+  printf("0");
   // Begin by setting up our usage environment:
   TaskScheduler* scheduler = BasicTaskScheduler::createNew();
   env = BasicUsageEnvironment::createNew(*scheduler);
