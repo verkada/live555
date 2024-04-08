@@ -350,7 +350,7 @@ Boolean RTPInterface::sendRTPorRTCPPacketOverTCP(u_int8_t* packet, unsigned pack
 						 int socketNum, unsigned char streamChannelId,
 						 TLSState* tlsState) {
 #ifdef DEBUG_SEND
-  Log.Debug(__FILE__, __LINE__, "sendRTPorRTCPPacketOverTCP: %d bytes over channel %d (socket %d)", packetSize, streamChannelId, socketNum); 
+  Log.Trace(__FILE__, __LINE__, "sendRTPorRTCPPacketOverTCP: %d bytes over channel %d (socket %d)", packetSize, streamChannelId, socketNum); 
 #endif
   // Send a RTP/RTCP packet over TCP, using the encoding defined in RFC 2326, section 10.12:
   //     $<streamChannelId><packetSize><packet>
