@@ -48,7 +48,7 @@ extern "C" int initializeWinsockIfNecessary();
 #endif
 #include <stdio.h>
 
-#include <../liveMedia/include/Log.hh>
+#include <Log.hh>
 
 // By default, use INADDR_ANY for the sending and receiving interfaces (IPv4 only):
 ipv4AddressBits SendingInterfaceAddr = INADDR_ANY;
