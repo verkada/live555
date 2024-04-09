@@ -48,6 +48,8 @@ extern "C" int initializeWinsockIfNecessary();
 #endif
 #include <stdio.h>
 
+#include <../liveMedia/include/Log.hh>
+
 // By default, use INADDR_ANY for the sending and receiving interfaces (IPv4 only):
 ipv4AddressBits SendingInterfaceAddr = INADDR_ANY;
 ipv4AddressBits ReceivingInterfaceAddr = INADDR_ANY;
@@ -408,12 +410,15 @@ int readSocket(UsageEnvironment& env,
 	|| err == EAGAIN
 #endif
 	|| err == 113 /*EHOSTUNREACH (Linux)*/) { // Why does Linux return this for datagram sock?
+      Log.Error(__FILE__, __LINE__, "Received error EHOSTUNREACH while reading socket %d, err: %d, bytesRead: %d", socket, err, bytesRead);
       return 0;
     }
     //##### END HACK
+    Log.Error(__FILE__, __LINE__, "Error reading socket %d, err: %d, bytesRead: %d", socket, err, bytesRead);
     socketErr(env, "recvfrom() error: ");
   } else if (bytesRead == 0) {
     // "recvfrom()" on a stream socket can return 0 if the remote end has closed the connection.  Treat this as an error:
+    Log.Error(__FILE__, __LINE__, "Looks like remote client has gracefully closed socket %d connection because bytesRead == 0", socket);
     return -1;
   }
 
