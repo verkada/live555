@@ -365,14 +365,14 @@ Boolean RTPInterface::sendRTPorRTCPPacketOverTCP(u_int8_t* packet, unsigned pack
     framingHeader[3] = (u_int8_t) (packetSize&0xFF);
     if (!sendDataOverTCP(socketNum, tlsState, framingHeader, 4, False)) {
 #ifdef DEBUG_SEND
-  Log.Error(__FILE__, __LINE__, "sendDataOverTCP: sending %d bytes of framingHeader failed", 4);
+      Log.Error(__FILE__, __LINE__, "sendDataOverTCP: sending %d bytes of framingHeader failed", 4);
 #endif
       break;
     }
 
     if (!sendDataOverTCP(socketNum, tlsState, packet, packetSize, True)) {
 #ifdef DEBUG_SEND
-  Log.Error(__FILE__, __LINE__, "sendDataOverTCP: sending %d bytes of packet failed", packetSize);
+      Log.Error(__FILE__, __LINE__, "sendDataOverTCP: sending %d bytes of packet failed", packetSize);
 #endif
       break;
     }
@@ -406,7 +406,7 @@ Boolean RTPInterface::sendDataOverTCP(int socketNum, TLSState* tlsState,
       // Force this data write to succeed, by blocking if necessary until it does:
       unsigned numBytesRemainingToSend = dataSize - numBytesSentSoFar;
 #ifdef DEBUG_SEND
-      fprintf(stderr, "sendDataOverTCP: usetlsState: %d, sendResult: %d, resending %d-byte send (blocking)\n", usetlsState, sendResult, numBytesRemainingToSend); fflush(stderr);
+      Log.Info(__FILE__, __LINE__, "sendDataOverTCP: usetlsState: %d, sendResult: %d, resending %d-byte send (blocking)\n", usetlsState, sendResult, numBytesRemainingToSend);
 #endif
       makeSocketBlocking(socketNum, RTPINTERFACE_BLOCKING_WRITE_TIMEOUT_MS);
       sendResult = (tlsState != NULL && tlsState->isNeeded)
@@ -421,7 +421,7 @@ Boolean RTPInterface::sendDataOverTCP(int socketNum, TLSState* tlsState,
       // (If we kept using the socket here, the RTP or RTCP packet write would be in an
       //  incomplete, inconsistent state.)
 #ifdef DEBUG_SEND
-	      fprintf(stderr, "sendDataOverTCP: usetlsState: %d, blocking send() failed (delivering %d bytes out of %d); closing socket %d\n", usetlsState, sendResult, numBytesRemainingToSend, socketNum); fflush(stderr);
+	      Log.Error(__FILE__, __LINE__, "sendDataOverTCP: usetlsState: %d, blocking send() failed (delivering %d bytes out of %d); closing socket %d\n", usetlsState, sendResult, numBytesRemainingToSend, socketNum);
 #endif
 	      removeStreamSocket(socketNum, 0xFF);
 	      return False;
@@ -432,7 +432,7 @@ Boolean RTPInterface::sendDataOverTCP(int socketNum, TLSState* tlsState,
       // Because the "send()" call failed, assume that the socket is now unusable, so stop
       // using it (for both RTP and RTCP):
 #ifdef DEBUG_SEND
-	      fprintf(stderr, "sendDataOverTCP: send() failed, usetlsState: %d, sendResult: %d, dataSize: %d, envirErrorno: %d, socketNum: %d \n", usetlsState, sendResult, envirErrorno, dataSize, socketNum); fflush(stderr);
+	      Log.Error(__FILE__, __LINE__, "sendDataOverTCP: send() failed, usetlsState: %d, sendResult: %d, dataSize: %d, envirErrorno: %d, socketNum: %d \n", usetlsState, sendResult, envirErrorno, dataSize, socketNum);
 #endif
 
       removeStreamSocket(socketNum, 0xFF);
@@ -488,7 +488,7 @@ void SocketDescriptor::registerRTPInterface(unsigned char streamChannelId,
 					    RTPInterface* rtpInterface) {
   Boolean isFirstRegistration = fSubChannelHashTable->IsEmpty();
 #if defined(DEBUG_SEND)||defined(DEBUG_RECEIVE)
-  fprintf(stderr, "SocketDescriptor(socket %d)::registerRTPInterface(channel %d): isFirstRegistration %d\n", fOurSocketNum, streamChannelId, isFirstRegistration);
+  Log.Info(__FILE__, __LINE__, "SocketDescriptor(socket %d)::registerRTPInterface(channel %d): isFirstRegistration %d\n", fOurSocketNum, streamChannelId, isFirstRegistration);
 #endif
   fSubChannelHashTable->Add((char const*)(long)streamChannelId,
 			    rtpInterface);
@@ -511,7 +511,7 @@ RTPInterface* SocketDescriptor
 void SocketDescriptor
 ::deregisterRTPInterface(unsigned char streamChannelId) {
 #if defined(DEBUG_SEND)||defined(DEBUG_RECEIVE)
-  fprintf(stderr, "SocketDescriptor(socket %d)::deregisterRTPInterface(channel %d)\n", fOurSocketNum, streamChannelId);
+  Log.Info(__FILE__, __LINE__, "SocketDescriptor(socket %d)::deregisterRTPInterface(channel %d)\n", fOurSocketNum, streamChannelId);
 #endif
   fSubChannelHashTable->Remove((char const*)(long)streamChannelId);
 
@@ -527,9 +527,12 @@ void SocketDescriptor
 
 void SocketDescriptor::tcpReadHandler(SocketDescriptor* socketDescriptor, int mask) {
   // Call the read handler until it returns false, with a limit to avoid starving other sockets
-  unsigned count = 2000;
+  const int max_socket_tries = 2000;
+  unsigned count = max_socket_tries;
   socketDescriptor->fAreInReadHandlerLoop = True;
-  while (!socketDescriptor->fDeleteMyselfNext && socketDescriptor->tcpReadHandler1(mask) && --count > 0) {}
+  while (!socketDescriptor->fDeleteMyselfNext && socketDescriptor->tcpReadHandler1(mask) && --count > 0) {
+    Log.Warning(__FILE__, __LINE__, "SocketDescriptor(socket %d)::tcpReadHandler(): try %d of %d to read from socket", socketDescriptor->fOurSocketNum, max_socket_tries - count, max_socket_tries);
+  }
   socketDescriptor->fAreInReadHandlerLoop = False;
   if (socketDescriptor->fDeleteMyselfNext) delete socketDescriptor;
 }
@@ -546,14 +549,13 @@ Boolean SocketDescriptor::tcpReadHandler1(int mask) {
   u_int8_t c;
   struct sockaddr_storage dummy; // not used
   if (fTCPReadingState != AWAITING_PACKET_DATA) {
-    int result = (fTLSState != NULL && fTLSState->isNeeded)
-      ? fTLSState->read(&c, 1)
-      : readSocket(fEnv, fOurSocketNum, &c, 1, dummy);
+    int usingTLSState = (fTLSState != NULL && fTLSState->isNeeded);
+    int result = usingTLSState ? fTLSState->read(&c, 1) : readSocket(fEnv, fOurSocketNum, &c, 1, dummy);
     if (result == 0) { // There was no more data to read
       return False;
     } else if (result != 1) { // error reading TCP socket, so we will no longer handle it
 #ifdef DEBUG_RECEIVE
-      fprintf(stderr, "SocketDescriptor(socket %d)::tcpReadHandler(): readSocket(1 byte) returned %d (error)\n", fOurSocketNum, result);
+      Log.Error(__FILE__, __LINE__, "SocketDescriptor(socket %d)::tcpReadHandler(): readSocket(1 byte) returned %d (error), usingTLSState: %d", fOurSocketNum, result, usingTLSState);
 #endif
       fReadErrorOccurred = True;
       fDeleteMyselfNext = True;
@@ -566,7 +568,7 @@ Boolean SocketDescriptor::tcpReadHandler1(int mask) {
     case AWAITING_DOLLAR: {
       if (c == '$') {
 #ifdef DEBUG_RECEIVE
-	fprintf(stderr, "SocketDescriptor(socket %d)::tcpReadHandler(): Saw '$'\n", fOurSocketNum);
+	Log.Debug(__FILE__, __LINE__, "SocketDescriptor(socket %d)::tcpReadHandler(): Saw '$'", fOurSocketNum);
 #endif
 	fTCPReadingState = AWAITING_STREAM_CHANNEL_ID;
       } else {
@@ -586,7 +588,7 @@ Boolean SocketDescriptor::tcpReadHandler1(int mask) {
       } else {
 	// This wasn't a stream channel id that we expected.  We're (somehow) in a strange state.  Try to recover:
 #ifdef DEBUG_RECEIVE
-	fprintf(stderr, "SocketDescriptor(socket %d)::tcpReadHandler(): Saw nonexistent stream channel id: 0x%02x\n", fOurSocketNum, c);
+	      Log.Warning(__FILE__, __LINE__, "SocketDescriptor(socket %d)::tcpReadHandler(): Saw nonexistent stream channel id: 0x%02x", fOurSocketNum, c);
 #endif
 	fTCPReadingState = AWAITING_DOLLAR;
       }
@@ -619,41 +621,40 @@ Boolean SocketDescriptor::tcpReadHandler1(int mask) {
       // Call the appropriate read handler to get the packet data from the TCP stream:
       RTPInterface* rtpInterface = lookupRTPInterface(fStreamChannelId);
       if (rtpInterface != NULL) {
-	if (rtpInterface->fNextTCPReadSize == 0) {
-	  // We've already read all the data for this packet.
-	  break;
-	}
-	if (rtpInterface->fReadHandlerProc != NULL) {
-#ifdef DEBUG_RECEIVE
-	  fprintf(stderr, "SocketDescriptor(socket %d)::tcpReadHandler(): reading %d bytes on channel %d\n", fOurSocketNum, rtpInterface->fNextTCPReadSize, rtpInterface->fNextTCPReadStreamChannelId);
-#endif
-	  fTCPReadingState = AWAITING_PACKET_DATA;
-	  rtpInterface->fReadHandlerProc(rtpInterface->fOwner, mask);
-	} else {
-#ifdef DEBUG_RECEIVE
-	  fprintf(stderr, "SocketDescriptor(socket %d)::tcpReadHandler(): No handler proc for \"rtpInterface\" for channel %d; need to skip %d remaining bytes\n", fOurSocketNum, fStreamChannelId, rtpInterface->fNextTCPReadSize);
-#endif
-	  int result = (fTLSState != NULL && fTLSState->isNeeded)
-	    ? fTLSState->read(&c, 1)
-	    : readSocket(fEnv, fOurSocketNum, &c, 1, dummy);
-	  if (result < 0) { // error reading TCP socket, so we will no longer handle it
-#ifdef DEBUG_RECEIVE
-	    fprintf(stderr, "SocketDescriptor(socket %d)::tcpReadHandler(): readSocket(1 byte) returned %d (error)\n", fOurSocketNum, result);
-#endif
-	    fReadErrorOccurred = True;
-	    fDeleteMyselfNext = True;
-	    return False;
-	  } else {
-	    fTCPReadingState = AWAITING_PACKET_DATA;
-	    if (result == 1) {
-	      --rtpInterface->fNextTCPReadSize;
-	      callAgain = True;
-	    }
-	  }
-	}
+        if (rtpInterface->fNextTCPReadSize == 0) {
+          // We've already read all the data for this packet.
+          break;
+        }
+        if (rtpInterface->fReadHandlerProc != NULL) {
+      #ifdef DEBUG_RECEIVE
+          Log.Error(__FILE__, __LINE__, "SocketDescriptor(socket %d)::tcpReadHandler(): reading %d bytes on channel %d", fOurSocketNum, rtpInterface->fNextTCPReadSize, rtpInterface->fNextTCPReadStreamChannelId);
+      #endif
+          fTCPReadingState = AWAITING_PACKET_DATA;
+          rtpInterface->fReadHandlerProc(rtpInterface->fOwner, mask);
+        } else {
+      #ifdef DEBUG_RECEIVE
+          Log.Error(__FILE__, __LINE__, "SocketDescriptor(socket %d)::tcpReadHandler(): No handler proc for \"rtpInterface\" for channel %d; need to skip %d remaining bytes", fOurSocketNum, fStreamChannelId, rtpInterface->fNextTCPReadSize);
+      #endif
+          int usingTLSState = (fTLSState != NULL && fTLSState->isNeeded);
+          int result = usingTLSState ? fTLSState->read(&c, 1) : readSocket(fEnv, fOurSocketNum, &c, 1, dummy);
+          if (result < 0) { // error reading TCP socket, so we will no longer handle it
+      #ifdef DEBUG_RECEIVE
+            Log.Error(__FILE__, __LINE__, "SocketDescriptor(socket %d)::tcpReadHandler(): readSocket(1 byte) returned %d (error), usingTLSState: %d", fOurSocketNum, result, usingTLSState);
+      #endif
+            fReadErrorOccurred = True;
+            fDeleteMyselfNext = True;
+            return False;
+          } else {
+            fTCPReadingState = AWAITING_PACKET_DATA;
+            if (result == 1) {
+              --rtpInterface->fNextTCPReadSize;
+              callAgain = True;
+            }
+          }
+        }
       }
 #ifdef DEBUG_RECEIVE
-      else fprintf(stderr, "SocketDescriptor(socket %d)::tcpReadHandler(): No \"rtpInterface\" for channel %d\n", fOurSocketNum, fStreamChannelId);
+      else Log.Error(__FILE__, __LINE__, "SocketDescriptor(socket %d)::tcpReadHandler(): No \"rtpInterface\" for channel %d\n", fOurSocketNum, fStreamChannelId);
 #endif
     }
   }
