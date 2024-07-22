@@ -9,9 +9,8 @@ all:	$(ALL)
 .$(CPP).$(OBJ):
 	$(CPLUSPLUS_COMPILER) -c $(CPLUSPLUS_FLAGS) $<
 
-GROUPSOCK_LIB_OBJS = GroupsockHelper.$(OBJ) GroupEId.$(OBJ) inet.$(OBJ) Groupsock.$(OBJ) NetInterface.$(OBJ) NetAddress.$(OBJ) IOHandlers.$(OBJ) Log.$(OBJ)
+GROUPSOCK_LIB_OBJS = GroupsockHelper.$(OBJ) GroupEId.$(OBJ) inet.$(OBJ) Groupsock.$(OBJ) NetInterface.$(OBJ) NetAddress.$(OBJ) IOHandlers.$(OBJ)
 
-Log.$(CPP):				include/Log.hh
 GroupsockHelper.$(CPP):	include/GroupsockHelper.hh
 include/GroupsockHelper.hh:	include/NetAddress.hh
 include/NetAddress.hh:	include/NetCommon.h

@@ -61,7 +61,7 @@ HLS_OBJS = HLSSegmenter.$(OBJ)
 
 SECURITY_OBJS = TLSState.$(OBJ) MIKEY.$(OBJ) SRTPCryptographicContext.$(OBJ) HMAC_SHA1.$(OBJ)
 
-MISC_OBJS = BitVector.$(OBJ) StreamParser.$(OBJ) DigestAuthentication.$(OBJ) ourMD5.$(OBJ) Base64.$(OBJ) Locale.$(OBJ) Log.$(OBJ)
+MISC_OBJS = BitVector.$(OBJ) StreamParser.$(OBJ) DigestAuthentication.$(OBJ) ourMD5.$(OBJ) Base64.$(OBJ) Locale.$(OBJ)
 
 LIVEMEDIA_LIB_OBJS = Media.$(OBJ) $(MISC_SOURCE_OBJS) $(MISC_SINK_OBJS) $(MISC_FILTER_OBJS) $(RTP_OBJS) $(RTCP_OBJS) $(GENERIC_MEDIA_SERVER_OBJS) $(RTSP_OBJS) $(SIP_OBJS) $(SESSION_OBJS) $(QUICKTIME_OBJS) $(AVI_OBJS) $(TRANSPORT_STREAM_TRICK_PLAY_OBJS) $(MATROSKA_OBJS) $(OGG_OBJS) $(TRANSPORT_STREAM_DEMUX_OBJS) $(HLS_OBJS) $(SECURITY_OBJS) $(MISC_OBJS)
 
@@ -70,7 +70,6 @@ $(LIVEMEDIA_LIB): $(LIVEMEDIA_LIB_OBJS) \
 	$(LIBRARY_LINK)$@ $(LIBRARY_LINK_OPTS) \
 		$(LIVEMEDIA_LIB_OBJS) $(LIBS_FOR_LIVEMEDIA_LIB)
 
-Log.$(CPP):			include/Log.hh
 Media.$(CPP):		include/Media.hh
 include/Media.hh:	include/liveMedia_version.hh
 MediaSource.$(CPP):	include/MediaSource.hh
