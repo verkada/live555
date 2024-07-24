@@ -18,7 +18,7 @@ $(USAGE_ENVIRONMENT_LIB): $(OBJS)
 
 UsageEnvironment.$(CPP):	include/UsageEnvironment.hh
 include/UsageEnvironment.hh:	include/UsageEnvironment_version.hh include/Boolean.hh include/strDup.hh
-Log.$(CPP):		include/Log.hh
+Log.$(CPP):			include/Log.hh
 HashTable.$(CPP):		include/HashTable.hh
 include/HashTable.hh:		include/Boolean.hh
 strDup.$(CPP):			include/strDup.hh

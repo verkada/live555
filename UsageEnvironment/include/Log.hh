@@ -9,7 +9,9 @@
 #include <string>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <limits.h>
+#include <mutex>
 
 enum LogLevel {
   LogLevelPanic,
@@ -23,39 +25,38 @@ enum LogLevel {
 
 class _Log {
 private:
-  char      logFilePath[256];
-  bool      logToStdout;
-  LogLevel  logLevel;
+  const unsigned int kMaxLogs = 6;
+
+  std::string    currLogFilePath;
+  std::string    logFileDir;
+  std::mutex     logMutex;
+  unsigned int   logFileNum;
+  bool           logToStdout;
+  LogLevel       logLevel;
 
   FILE* AcquireFile();
   void  ReleaseFile(FILE* logFileHandle);
-  void  BackupLog();
-  void  RemoveOldBackup();
+  void  NextLogFile();
+  void  PreviousLogFile();
+  void  SetLogFileNum(unsigned int logNum);
+  void  PrepNextLog();
+  void  LogWithLevel(LogLevel level, const std::string filePath, int line, const char* format, va_list argptr);
 public:
-  _Log() : logToStdout(false), logLevel(LogLevelDebug) {
-# ifdef LOG_FILE_TMP_DIR
-    strcpy(logFilePath, LOG_FILE_TMP_DIR "/live555.log");
-# else
-  strcpy(logFilePath, "");
-# endif
-#ifdef ERROR_MESSAGE_BACKUP_TRIGGER
-    fprintf(stdout, "Checking for error %s", ERROR_MESSAGE_BACKUP_TRIGGER);
-#endif
-  }
-
+  _Log(const std::string logDirectory = "");
   ~_Log() {}
 
-  void OutputToFile(const char* filePath);
+  void BackupLog(const std::string backupFileName);
+  void OutputToFile(const std::string filePath);
   void OutputToStdout(bool toStdout);
   void SetLevel(LogLevel level);
 
-  void Panic(const char* filePath, int line, const char * format, ...);
-  void Fatal(const char* filePath, int line, const char * format, ...);
-  void Error(const char* filePath, int line, const char * format, ...);
-  void Warning(const char* filePath, int line, const char * format, ...);
-  void Info(const char* filePath, int line, const char * format, ...);
-  void Debug(const char* filePath, int line, const char * format, ...);
-  void Trace(const char* filePath, int line, const char * format, ...);
+  void Panic(const std::string filePath, int line, const char* format, ...);
+  void Fatal(const std::string filePath, int line, const char* format, ...);
+  void Error(const std::string filePath, int line, const char* format, ...);
+  void Warning(const std::string filePath, int line, const char* format, ...);
+  void Info(const std::string filePath, int line, const char* format, ...);
+  void Debug(const std::string filePath, int line, const char* format, ...);
+  void Trace(const std::string filePath, int line, const char* format, ...);
 };
 
 extern _Log Log;
