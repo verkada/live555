@@ -1,0 +1,24 @@
+name: Makefile CI
+
+on:
+  push:
+    branches: [ "live555-verkada" ]
+  pull_request:
+    branches: [ "live555-verkada" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: configure
+      run: ./configure
+
+    - name: Generate Makefiles
+      run: ./genMakefiles linux
+
+    - name: Make All live555 targets
+      run: make CPPFLAGS='-DLOG_FILE_TMP_DIR="\"/test/path\""'
