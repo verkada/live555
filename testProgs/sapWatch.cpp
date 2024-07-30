@@ -17,6 +17,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A program that receives and prints SDP/SAP announcements
 // (on the default SDP/SAP directory: 224.2.127.254/9875)
 
+#include <Log.hh>
 #include "Groupsock.hh"
 #include "GroupsockHelper.hh"
 #include "BasicUsageEnvironment.hh"
@@ -50,7 +51,7 @@ int main(int argc, char** argv) {
   struct sockaddr_storage fromAddress;
   while (inputGroupsock.handleRead(packet, maxPacketSize,
 				   packetSize, fromAddress)) {
-    printf("\n[packet from %s (%d bytes)]\n", AddressString(fromAddress).val(), packetSize);
+    Log.Info(__FILE__, __LINE__, "\n[packet from %s (%d bytes)]\n", AddressString(fromAddress).val(), packetSize);
 
     // Ignore the first 8 bytes (SAP header).
     if (packetSize < 8) {
@@ -67,7 +68,7 @@ int main(int argc, char** argv) {
     }
 
     packet[packetSize] = '\0'; // just in case
-    printf("%s", (char*)(packet+8));
+    Log.Info(__FILE__, __LINE__, "%s", (char*)(packet+8));
   }
 
   return 0; // only to prevent compiler warning

@@ -299,7 +299,7 @@ Boolean MP3StreamState::findNextFrame() {
       } while ((fr().hdr & HDRCMPMASK) != (fr().oldHdr & HDRCMPMASK)
 	       && (fr().hdr & HDRCMPMASK) != (fr().firstHdr & HDRCMPMASK));
 #ifdef DEBUG_ERRORS
-      fprintf (stderr, "Skipped %d bytes in input.\n", attempt);
+      Log.Error(__FILE__, __LINE__, "Skipped %d bytes in input.\n", attempt);
 #endif
     }
     if (!fr().firstHdr) {

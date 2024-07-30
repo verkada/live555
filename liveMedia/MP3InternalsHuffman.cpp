@@ -650,7 +650,7 @@ static int rsf_huffman_decoder(BitVector& bv,
   /* Check for error. */
 
   if (error) { /* set x and y to a medium value as a simple concealment */
-    printf("Illegal Huffman code in data.\n");
+    Log.Error(__FILE__, __LINE__, "Illegal Huffman code in data.\n");
     *x = ((h->xlen-1) << 1);
     *y = ((h->ylen-1) << 1);
   }

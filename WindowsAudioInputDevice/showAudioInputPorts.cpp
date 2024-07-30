@@ -27,9 +27,9 @@ int main(int argc, char** argv) {
 		exit(1);
 	}
 
-	printf("%d available audio input ports:\n", portNames->numPorts);
+	Log.Info(__FILE__, __LINE__, "%d available audio input ports:\n", portNames->numPorts);
 	for (unsigned i = 0; i < portNames->numPorts; ++i) {
-		printf("%d\t%s\n", i, portNames->portName[i]);
+		Log.Info(__FILE__, __LINE__, "%d\t%s\n", i, portNames->portName[i]);
 	}
 
   return 0;

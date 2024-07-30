@@ -17,6 +17,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Basic Usage Environment: for a simple, non-scripted, console application
 // Implementation
 
+#include <Log.hh>
 #include "BasicUsageEnvironment0.hh"
 #include <stdio.h>
 #if defined(__WIN32__) || defined(_WIN32) || defined(_WIN32_WCE)
@@ -103,6 +104,6 @@ void BasicUsageEnvironment0::appendToResultMsg(MsgString msg) {
 }
 
 void BasicUsageEnvironment0::reportBackgroundError() {
-  fputs(getResultMsg(), stderr);
+  Log.Error(__FILE__, __LINE__, getResultMsg());
 }
 

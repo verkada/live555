@@ -405,7 +405,7 @@ Boolean RTPInterface::sendDataOverTCP(int socketNum, TLSState* tlsState,
       // Force this data write to succeed, by blocking if necessary until it does:
       unsigned numBytesRemainingToSend = dataSize - numBytesSentSoFar;
 #ifdef DEBUG_SEND
-      fprintf(stderr, "sendDataOverTCP: resending %d-byte send (blocking)\n", numBytesRemainingToSend); fflush(stderr);
+      Log.Error(__FILE__, __LINE__, "sendDataOverTCP: resending %d-byte send (blocking)\n", numBytesRemainingToSend); fflush(stderr);
 #endif
       makeSocketBlocking(socketNum, RTPINTERFACE_BLOCKING_WRITE_TIMEOUT_MS);
       sendResult = (tlsState != NULL && tlsState->isNeeded)
@@ -418,7 +418,7 @@ Boolean RTPInterface::sendDataOverTCP(int socketNum, TLSState* tlsState,
     // (for both RTP and RTP)   // (If we kept using the socket here, the RTP or RTCP packet write w    ould be in an
     //  incomplete, inconsistent state.)
 #ifdef DEBUG_SEND
-    fprintf(stderr, "sendDataOverTCP: blocking send() failed (delivering %d bytes out of %d); closin    g socket %d\n", sendResult, numBytesRemainingToSend, socketNum); fflush(stderr);
+    Log.Error(__FILE__, __LINE__, "sendDataOverTCP: blocking send() failed (delivering %d bytes out of %d); closin    g socket %d\n", sendResult, numBytesRemainingToSend, socketNum); fflush(stderr);
 #endif
     removeStreamSocket(socketNum, 0xFF);
     return False;
