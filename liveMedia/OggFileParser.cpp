@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A parser for an Ogg file.
 // Implementation
 
+#include <Log.hh>
 #include "OggFileParser.hh"
 #include "OggDemuxedTrack.hh"
 #include <GroupsockHelper.hh> // for "gettimeofday()
@@ -95,7 +96,7 @@ Boolean OggFileParser::parse() {
     }
   } catch (int /*e*/) {
 #ifdef DEBUG
-    fprintf(stderr, "OggFileParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
+    Log.Error(__FILE__, __LINE__, "OggFileParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
 #endif
     return False; // the parsing got interrupted
   }
@@ -103,7 +104,7 @@ Boolean OggFileParser::parse() {
 
 Boolean OggFileParser::parseStartOfFile() {
 #ifdef DEBUG
-  fprintf(stderr, "parsing start of file\n");
+  Log.Error(__FILE__, __LINE__, "parsing start of file\n");
 #endif
   // Read and parse each 'page', until we see the first non-BOS page, or until we have
   // collected all required headers for Vorbis, Theora, or Opus track(s) (if any).
@@ -113,7 +114,7 @@ Boolean OggFileParser::parseStartOfFile() {
   } while ((header_type_flag&0x02) != 0 || needHeaders());
   
 #ifdef DEBUG
-  fprintf(stderr, "Finished parsing start of file\n");
+  Log.Error(__FILE__, __LINE__, "Finished parsing start of file\n");
 #endif
   return True;
 }
@@ -160,7 +161,7 @@ u_int8_t OggFileParser::parseInitialPage() {
 
   if (track != NULL) { // sanity check
 #ifdef DEBUG
-    fprintf(stderr, "This track's MIME type: %s\n",
+    Log.Error(__FILE__, __LINE__, "This track's MIME type: %s\n",
 	    track->mimeType == NULL ? "(unknown)" : track->mimeType);
 #endif
     if (track->mimeType != NULL &&
@@ -205,7 +206,7 @@ u_int8_t OggFileParser::parseInitialPage() {
 	if (headerIsKnown) {
 #ifdef DEBUG
 	  char const* headerName[3] = { "identification", "comment", "setup" };
-	  fprintf(stderr, "Saved %d-byte %s \"%s\" header\n", packetSize, track->mimeType,
+	  Log.Error(__FILE__, __LINE__, "Saved %d-byte %s \"%s\" header\n", packetSize, track->mimeType,
 		  headerName[index]);
 #endif
 	  // This is a header, but first check it for validity:
@@ -231,7 +232,7 @@ u_int8_t OggFileParser::parseInitialPage() {
   // Skip over any remaining packet data bytes:
   if (fPacketSizeTable->totSizes > 0) {
 #ifdef DEBUG
-    fprintf(stderr, "Skipping %d remaining packet data bytes\n", fPacketSizeTable->totSizes);
+    Log.Error(__FILE__, __LINE__, "Skipping %d remaining packet data bytes\n", fPacketSizeTable->totSizes);
 #endif
     skipBytes(fPacketSizeTable->totSizes);
   }
@@ -333,13 +334,13 @@ static Boolean parseVorbisSetup_codebook(LEBitVector& bv) {
   unsigned codebook_entries = bv.getBits(24);
   unsigned ordered = bv.getBits(1);
 #ifdef DEBUG_SETUP_HEADER
-  fprintf(stderr, "\t\t\tcodebook_dimensions: %d; codebook_entries: %d, ordered: %d\n",
+  Log.Error(__FILE__, __LINE__, "\t\t\tcodebook_dimensions: %d; codebook_entries: %d, ordered: %d\n",
 	  codebook_dimensions, codebook_entries, ordered);
 #endif
   if (!ordered) {
     unsigned sparse = bv.getBits(1);
 #ifdef DEBUG_SETUP_HEADER
-    fprintf(stderr, "\t\t\t!ordered: sparse %d\n", sparse);
+    Log.Error(__FILE__, __LINE__, "\t\t\t!ordered: sparse %d\n", sparse);
 #endif
     for (unsigned i = 0; i < codebook_entries; ++i) {
       unsigned codewordLength;
@@ -355,26 +356,26 @@ static Boolean parseVorbisSetup_codebook(LEBitVector& bv) {
 	codewordLength = bv.getBits(5) + 1;
       }
 #ifdef DEBUG_SETUP_HEADER
-      fprintf(stderr, "\t\t\t\tcodeword length[%d]:\t%d\n", i, codewordLength);
+      Log.Error(__FILE__, __LINE__, "\t\t\t\tcodeword length[%d]:\t%d\n", i, codewordLength);
 #else
       codewordLength = codewordLength; // to prevent compiler warning
 #endif
     }
   } else { // ordered
 #ifdef DEBUG_SETUP_HEADER
-    fprintf(stderr, "\t\t\tordered:\n");
+    Log.Error(__FILE__, __LINE__, "\t\t\tordered:\n");
 #endif
     unsigned current_entry = 0;
     unsigned current_length = bv.getBits(5) + 1;
     do {
       unsigned number = bv.getBits(ilog(codebook_entries - current_entry));
 #ifdef DEBUG_SETUP_HEADER
-      fprintf(stderr, "\t\t\t\tcodeword length[%d..%d]:\t%d\n",
+      Log.Error(__FILE__, __LINE__, "\t\t\t\tcodeword length[%d..%d]:\t%d\n",
 	      current_entry, current_entry + number - 1, current_length);
 #endif
       current_entry += number;
       if (current_entry > codebook_entries) {
-	fprintf(stderr, "Vorbis codebook parsing error: current_entry %d > codebook_entries %d!\n", current_entry, codebook_entries);
+	Log.Error(__FILE__, __LINE__, "Vorbis codebook parsing error: current_entry %d > codebook_entries %d!\n", current_entry, codebook_entries);
 	return False;
       }
       ++current_length;
@@ -383,10 +384,10 @@ static Boolean parseVorbisSetup_codebook(LEBitVector& bv) {
 
   unsigned codebook_lookup_type = bv.getBits(4);
 #ifdef DEBUG_SETUP_HEADER
-  fprintf(stderr, "\t\t\tcodebook_lookup_type: %d\n", codebook_lookup_type);
+  Log.Error(__FILE__, __LINE__, "\t\t\tcodebook_lookup_type: %d\n", codebook_lookup_type);
 #endif
   if (codebook_lookup_type > 2) {
-    fprintf(stderr, "Vorbis codebook parsing error: codebook_lookup_type %d!\n", codebook_lookup_type);
+    Log.Error(__FILE__, __LINE__, "Vorbis codebook parsing error: codebook_lookup_type %d!\n", codebook_lookup_type);
     return False;
   } else if (codebook_lookup_type > 0) { // 1 or 2
     bv.skipBits(32+32); // "codebook_minimum_value" and "codebook_delta_value"
@@ -410,11 +411,11 @@ static Boolean parseVorbisSetup_codebooks(LEBitVector& bv) {
 
   unsigned vorbis_codebook_count = bv.getBits(8) + 1;
 #ifdef DEBUG_SETUP_HEADER
-  fprintf(stderr, "\tCodebooks: vorbis_codebook_count: %d\n", vorbis_codebook_count);
+  Log.Error(__FILE__, __LINE__, "\tCodebooks: vorbis_codebook_count: %d\n", vorbis_codebook_count);
 #endif
   for (unsigned i = 0; i < vorbis_codebook_count; ++i) {
 #ifdef DEBUG_SETUP_HEADER
-    fprintf(stderr, "\t\tCodebook %d:\n", i);
+    Log.Error(__FILE__, __LINE__, "\t\tCodebook %d:\n", i);
 #endif
     if (!parseVorbisSetup_codebook(bv)) return False;
   }
@@ -427,12 +428,12 @@ static Boolean parseVorbisSetup_timeDomainTransforms(LEBitVector& bv) {
 
   unsigned vorbis_time_count = bv.getBits(6) + 1;
 #ifdef DEBUG_SETUP_HEADER
-  fprintf(stderr, "\tTime domain transforms: vorbis_time_count: %d\n", vorbis_time_count);
+  Log.Error(__FILE__, __LINE__, "\tTime domain transforms: vorbis_time_count: %d\n", vorbis_time_count);
 #endif
   for (unsigned i = 0; i < vorbis_time_count; ++i) {
     unsigned val = bv.getBits(16);
     if (val != 0) {
-      fprintf(stderr, "Vorbis Time domain transforms, read non-zero value %d\n", val);
+      Log.Error(__FILE__, __LINE__, "Vorbis Time domain transforms, read non-zero value %d\n", val);
       return False;
     }
   }
@@ -445,7 +446,7 @@ static Boolean parseVorbisSetup_floors(LEBitVector& bv) {
 
   unsigned vorbis_floor_count = bv.getBits(6) + 1;
 #ifdef DEBUG_SETUP_HEADER
-  fprintf(stderr, "\tFloors: vorbis_floor_count: %d\n", vorbis_floor_count);
+  Log.Error(__FILE__, __LINE__, "\tFloors: vorbis_floor_count: %d\n", vorbis_floor_count);
 #endif
   for (unsigned i = 0; i < vorbis_floor_count; ++i) {
     unsigned floorType = bv.getBits(16);
@@ -485,7 +486,7 @@ static Boolean parseVorbisSetup_floors(LEBitVector& bv) {
       delete[] floor1_partition_class_list;
       delete[] floor1_class_dimensions;
     } else { // floorType > 1
-      fprintf(stderr, "Vorbis Floors, read bad floor type %d\n", floorType);
+      Log.Error(__FILE__, __LINE__, "Vorbis Floors, read bad floor type %d\n", floorType);
       return False;
     }
   }
@@ -498,12 +499,12 @@ static Boolean parseVorbisSetup_residues(LEBitVector& bv) {
 
   unsigned vorbis_residue_count = bv.getBits(6) + 1;
 #ifdef DEBUG_SETUP_HEADER
-  fprintf(stderr, "\tResidues: vorbis_residue_count: %d\n", vorbis_residue_count);
+  Log.Error(__FILE__, __LINE__, "\tResidues: vorbis_residue_count: %d\n", vorbis_residue_count);
 #endif
   for (unsigned i = 0; i < vorbis_residue_count; ++i) {
     unsigned vorbis_residue_type = bv.getBits(16);
     if (vorbis_residue_type > 2) {
-      fprintf(stderr, "Vorbis Residues, read bad vorbis_residue_type: %d\n", vorbis_residue_type);
+      Log.Error(__FILE__, __LINE__, "Vorbis Residues, read bad vorbis_residue_type: %d\n", vorbis_residue_type);
       return False;
     } else {
       bv.skipBits(24+24+24); // "residue_begin", "residue_end", "residue_partition_size"
@@ -544,12 +545,12 @@ static Boolean parseVorbisSetup_mappings(LEBitVector& bv, unsigned audio_channel
 
   unsigned vorbis_mapping_count = bv.getBits(6) + 1;
 #ifdef DEBUG_SETUP_HEADER
-  fprintf(stderr, "\tMappings: vorbis_mapping_count: %d\n", vorbis_mapping_count);
+  Log.Error(__FILE__, __LINE__, "\tMappings: vorbis_mapping_count: %d\n", vorbis_mapping_count);
 #endif
   for (unsigned i = 0; i < vorbis_mapping_count; ++i) {
     unsigned vorbis_mapping_type = bv.getBits(16);
     if (vorbis_mapping_type != 0) {
-      fprintf(stderr, "Vorbis Mappings, read bad vorbis_mapping_type: %d\n", vorbis_mapping_type);
+      Log.Error(__FILE__, __LINE__, "Vorbis Mappings, read bad vorbis_mapping_type: %d\n", vorbis_mapping_type);
       return False;
     }
 
@@ -567,7 +568,7 @@ static Boolean parseVorbisSetup_mappings(LEBitVector& bv, unsigned audio_channel
 
     unsigned reserved = bv.getBits(2);
     if (reserved != 0) {
-      fprintf(stderr, "Vorbis Mappings, read bad 'reserved' field\n");
+      Log.Error(__FILE__, __LINE__, "Vorbis Mappings, read bad 'reserved' field\n");
       return False;
     }
 
@@ -575,9 +576,9 @@ static Boolean parseVorbisSetup_mappings(LEBitVector& bv, unsigned audio_channel
       for (unsigned j = 0; j < audio_channels; ++j) {
 	unsigned vorbis_mapping_mux = bv.getBits(4);
 
-	fprintf(stderr, "\t\t\t\tvorbis_mapping_mux[%d]: %d\n", j, vorbis_mapping_mux);
+	Log.Error(__FILE__, __LINE__, "\t\t\t\tvorbis_mapping_mux[%d]: %d\n", j, vorbis_mapping_mux);
 	if (vorbis_mapping_mux >= vorbis_mapping_submaps) {
-	  fprintf(stderr, "Vorbis Mappings, read bad \"vorbis_mapping_mux\" %d (>= \"vorbis_mapping_submaps\" %d)\n", vorbis_mapping_mux, vorbis_mapping_submaps);
+	  Log.Error(__FILE__, __LINE__, "Vorbis Mappings, read bad \"vorbis_mapping_mux\" %d (>= \"vorbis_mapping_submaps\" %d)\n", vorbis_mapping_mux, vorbis_mapping_submaps);
 	  return False;
 	}
       }
@@ -595,7 +596,7 @@ static Boolean parseVorbisSetup_modes(LEBitVector& bv, OggTrack* track) {
   unsigned vorbis_mode_count = bv.getBits(6) + 1;
   unsigned ilog_vorbis_mode_count_minus_1 = ilog(vorbis_mode_count - 1);
 #ifdef DEBUG_SETUP_HEADER
-  fprintf(stderr, "\tModes: vorbis_mode_count: %d (ilog(%d-1):%d)\n",
+  Log.Error(__FILE__, __LINE__, "\tModes: vorbis_mode_count: %d (ilog(%d-1):%d)\n",
 	  vorbis_mode_count, vorbis_mode_count, ilog_vorbis_mode_count_minus_1);
 #endif
   track->vtoHdrs.vorbis_mode_count = vorbis_mode_count;
@@ -605,7 +606,7 @@ static Boolean parseVorbisSetup_modes(LEBitVector& bv, OggTrack* track) {
   for (unsigned i = 0; i < vorbis_mode_count; ++i) {
     track->vtoHdrs.vorbis_mode_blockflag[i] = (u_int8_t)bv.getBits(1);
 #ifdef DEBUG_SETUP_HEADER
-    fprintf(stderr, "\t\tMode %d: vorbis_mode_blockflag: %d\n", i, track->vtoHdrs.vorbis_mode_blockflag[i]);
+    Log.Error(__FILE__, __LINE__, "\t\tMode %d: vorbis_mode_blockflag: %d\n", i, track->vtoHdrs.vorbis_mode_blockflag[i]);
 #endif
     bv.skipBits(16+16+8); // "vorbis_mode_windowtype", "vorbis_mode_transformtype", "vorbis_mode_mapping"
   }
@@ -624,7 +625,7 @@ static Boolean parseVorbisSetupHeader(OggTrack* track, u_int8_t const* p, unsign
     if (!parseVorbisSetup_modes(bv, track)) break;
     unsigned framingFlag = bv.getBits(1);
     if (framingFlag == 0) {
-      fprintf(stderr, "Vorbis \"setup\" header did not end with a 'framing flag'!\n");
+      Log.Error(__FILE__, __LINE__, "Vorbis \"setup\" header did not end with a 'framing flag'!\n");
       break;
     }
 
@@ -637,13 +638,13 @@ static Boolean parseVorbisSetupHeader(OggTrack* track, u_int8_t const* p, unsign
 
 #ifdef DEBUG
 #define CHECK_PTR if (p >= pEnd) return False
-#define printComment(p, len) do { for (unsigned k = 0; k < len; ++k) { CHECK_PTR; fprintf(stderr, "%c", *p++); } } while (0)
+#define printComment(p, len) do { for (unsigned k = 0; k < len; ++k) { CHECK_PTR; Log.Error(__FILE__, __LINE__, "%c", *p++); } } while (0)
 #endif
 
 static Boolean validateCommentHeader(u_int8_t const *p, unsigned headerSize,
 				     unsigned isOpus = 0) {
   if (headerSize < 15+isOpus) { // need 7+isOpus + 4(vendor_length) + 4(user_comment_list_length)
-    fprintf(stderr, "\"comment\" header is too short (%d bytes)\n", headerSize);
+    Log.Error(__FILE__, __LINE__, "\"comment\" header is too short (%d bytes)\n", headerSize);
     return False;
   }
       
@@ -652,16 +653,16 @@ static Boolean validateCommentHeader(u_int8_t const *p, unsigned headerSize,
   p += 7+isOpus;
 
   u_int32_t vendor_length = (p[3]<<24)|(p[2]<<16)|(p[1]<<8)|p[0]; p += 4;
-  fprintf(stderr, "\tvendor_string:");
+  Log.Error(__FILE__, __LINE__, "\tvendor_string:");
   printComment(p, vendor_length);
-  fprintf(stderr, "\n");
+  Log.Error(__FILE__, __LINE__, "\n");
   
   u_int32_t user_comment_list_length = (p[3]<<24)|(p[2]<<16)|(p[1]<<8)|p[0]; p += 4;
   for (unsigned i = 0; i < user_comment_list_length; ++i) {
     CHECK_PTR; u_int32_t length = (p[3]<<24)|(p[2]<<16)|(p[1]<<8)|p[0]; p += 4;
-    fprintf(stderr, "\tuser_comment[%d]:", i);
+    Log.Error(__FILE__, __LINE__, "\tuser_comment[%d]:", i);
     printComment(p, length);
-    fprintf(stderr, "\n");
+    Log.Error(__FILE__, __LINE__, "\n");
   }
 #endif
 
@@ -681,30 +682,30 @@ Boolean OggFileParser::validateHeader(OggTrack* track, u_int8_t const* p, unsign
 
     if (firstByte == 1) { // "identification" header
       if (headerSize < 30) {
-	fprintf(stderr, "Vorbis \"identification\" header is too short (%d bytes)\n", headerSize);
+	Log.Error(__FILE__, __LINE__, "Vorbis \"identification\" header is too short (%d bytes)\n", headerSize);
 	return False;
       } else if ((p[29]&0x1) != 1) {
-	fprintf(stderr, "Vorbis \"identification\" header: 'framing_flag' is not set\n");
+	Log.Error(__FILE__, __LINE__, "Vorbis \"identification\" header: 'framing_flag' is not set\n");
 	return False;
       }
       
       p += 7;
       u_int32_t vorbis_version = (p[3]<<24)|(p[2]<<16)|(p[1]<<8)|p[0]; p += 4;
       if (vorbis_version != 0) {
-	fprintf(stderr, "Vorbis \"identification\" header has a bad 'vorbis_version': 0x%08x\n", vorbis_version);
+	Log.Error(__FILE__, __LINE__, "Vorbis \"identification\" header has a bad 'vorbis_version': 0x%08x\n", vorbis_version);
 	return False;
       }
       
       u_int8_t audio_channels = *p++;
       if (audio_channels == 0) {
-	fprintf(stderr, "Vorbis \"identification\" header: 'audio_channels' is 0!\n");
+	Log.Error(__FILE__, __LINE__, "Vorbis \"identification\" header: 'audio_channels' is 0!\n");
 	return False;
       }
       track->numChannels = audio_channels;
       
       u_int32_t audio_sample_rate = (p[3]<<24)|(p[2]<<16)|(p[1]<<8)|p[0]; p += 4;
       if (audio_sample_rate == 0) {
-	fprintf(stderr, "Vorbis \"identification\" header: 'audio_sample_rate' is 0!\n");
+	Log.Error(__FILE__, __LINE__, "Vorbis \"identification\" header: 'audio_sample_rate' is 0!\n");
 	return False;
       }
       track->samplingFrequency = audio_sample_rate;
@@ -727,14 +728,14 @@ Boolean OggFileParser::validateHeader(OggTrack* track, u_int8_t const* p, unsign
       track->vtoHdrs.uSecsPerPacket[0] = (unsigned)(uSecsPerSample*blocksize_0);
       track->vtoHdrs.uSecsPerPacket[1] = (unsigned)(uSecsPerSample*blocksize_1);
 #ifdef DEBUG
-      fprintf(stderr, "\t%u Hz, %u-channel, %u kbps (est), block sizes: %u,%u (%u,%u us)\n",
+      Log.Error(__FILE__, __LINE__, "\t%u Hz, %u-channel, %u kbps (est), block sizes: %u,%u (%u,%u us)\n",
 	      track->samplingFrequency, track->numChannels, track->estBitrate,
 	      blocksize_0, blocksize_1,
 	      track->vtoHdrs.uSecsPerPacket[0], track->vtoHdrs.uSecsPerPacket[1]);
 #endif
       // To be valid, "blocksize_0" must be <= "blocksize_1", and both must be in [64,8192]:
       if (!(blocksize_0 <= blocksize_1 && blocksize_0 >= 64 && blocksize_1 <= 8192)) {
-	fprintf(stderr, "Invalid Vorbis \"blocksize_0\" (%d) and/or \"blocksize_1\" (%d)!\n",
+	Log.Error(__FILE__, __LINE__, "Invalid Vorbis \"blocksize_0\" (%d) and/or \"blocksize_1\" (%d)!\n",
 		blocksize_0, blocksize_1);
 	return False;
       }
@@ -746,7 +747,7 @@ Boolean OggFileParser::validateHeader(OggTrack* track, u_int8_t const* p, unsign
       // near the end of the header, so we have to parse lots of other crap first.
       p += 7;
       if (!parseVorbisSetupHeader(track, p, headerSize)) {
-	fprintf(stderr, "Failed to parse Vorbis \"setup\" header!\n");
+	Log.Error(__FILE__, __LINE__, "Failed to parse Vorbis \"setup\" header!\n");
 	return False;
       }
     }
@@ -755,10 +756,10 @@ Boolean OggFileParser::validateHeader(OggTrack* track, u_int8_t const* p, unsign
 
     if (firstByte == 0x80) { // "identification" header
       if (headerSize < 42) {
-	fprintf(stderr, "Theora \"identification\" header is too short (%d bytes)\n", headerSize);
+	Log.Error(__FILE__, __LINE__, "Theora \"identification\" header is too short (%d bytes)\n", headerSize);
 	return False;
       } else if ((p[41]&0x7) != 0) {
-	fprintf(stderr, "Theora \"identification\" header: 'res' bits are non-zero\n");
+	Log.Error(__FILE__, __LINE__, "Theora \"identification\" header: 'res' bits are non-zero\n");
 	return False;
       }
 
@@ -766,15 +767,15 @@ Boolean OggFileParser::validateHeader(OggTrack* track, u_int8_t const* p, unsign
       u_int32_t FRN = (p[22]<<24) | (p[23]<<16) | (p[24]<<8) | p[25]; // Frame rate numerator
       u_int32_t FRD = (p[26]<<24) | (p[27]<<16) | (p[28]<<8) | p[29]; // Frame rate numerator
 #ifdef DEBUG
-      fprintf(stderr, "\tKFGSHIFT %d, Frame rate numerator %d, Frame rate denominator %d\n", track->vtoHdrs.KFGSHIFT, FRN, FRD);
+      Log.Error(__FILE__, __LINE__, "\tKFGSHIFT %d, Frame rate numerator %d, Frame rate denominator %d\n", track->vtoHdrs.KFGSHIFT, FRN, FRD);
 #endif
       if (FRN == 0 || FRD == 0) {
-	fprintf(stderr, "Theora \"identification\" header: Bad FRN and/or FRD values: %d, %d\n", FRN, FRD);
+	Log.Error(__FILE__, __LINE__, "Theora \"identification\" header: Bad FRN and/or FRD values: %d, %d\n", FRN, FRD);
 	return False;
       }
       track->vtoHdrs.uSecsPerFrame = (unsigned)((1000000.0*FRD)/FRN);
 #ifdef DEBUG
-      fprintf(stderr, "\t\t=> %u microseconds per frame\n", track->vtoHdrs.uSecsPerFrame);
+      Log.Error(__FILE__, __LINE__, "\t\t=> %u microseconds per frame\n", track->vtoHdrs.uSecsPerFrame);
 #endif
     } else if (firstByte == 0x81) { // "comment" header
       if (!validateCommentHeader(p, headerSize)) return False;
@@ -795,7 +796,7 @@ Boolean OggFileParser::validateHeader(OggTrack* track, u_int8_t const* p, unsign
 
 void OggFileParser::parseAndDeliverPages() {
 #ifdef DEBUG
-  fprintf(stderr, "parsing and delivering data\n");
+  Log.Error(__FILE__, __LINE__, "parsing and delivering data\n");
 #endif
   while (parseAndDeliverPage()) {}
 }
@@ -808,7 +809,7 @@ Boolean OggFileParser::parseAndDeliverPage() {
   OggDemuxedTrack* demuxedTrack = fOurDemux->lookupDemuxedTrack(bitstream_serial_number);
   if (demuxedTrack == NULL) { // this track is not being read
 #ifdef DEBUG
-    fprintf(stderr, "\tIgnoring page from unread track; skipping %d remaining packet data bytes\n",
+    Log.Error(__FILE__, __LINE__, "\tIgnoring page from unread track; skipping %d remaining packet data bytes\n",
 	    fPacketSizeTable->totSizes);
 #endif
     skipBytes(fPacketSizeTable->totSizes);
@@ -816,7 +817,7 @@ Boolean OggFileParser::parseAndDeliverPage() {
   } else if (fPacketSizeTable->totSizes == 0) {
     // This page is empty (has no packets).  Skip it and continue
 #ifdef DEBUG
-    fprintf(stderr, "\t[track: %s] Skipping empty page\n", demuxedTrack->MIMEtype());
+    Log.Error(__FILE__, __LINE__, "\t[track: %s] Skipping empty page\n", demuxedTrack->MIMEtype());
 #endif
     return True;
   }
@@ -841,7 +842,7 @@ Boolean OggFileParser::deliverPacketWithinPage() {
     // We can't deliver this frame until he asks for it, so punt for now.
     // The next time he asks for a frame, he'll get it.
 #ifdef DEBUG
-    fprintf(stderr, "\t[track: %s] Deferring delivery of packet %d (%d bytes%s)\n",
+    Log.Error(__FILE__, __LINE__, "\t[track: %s] Deferring delivery of packet %d (%d bytes%s)\n",
 	    demuxedTrack->MIMEtype(), packetNum, packetSize,
 	    packetNum == fPacketSizeTable->numCompletedPackets ? " (incomplete)" : "");
 #endif
@@ -850,7 +851,7 @@ Boolean OggFileParser::deliverPacketWithinPage() {
 
   // Deliver the next packet:
 #ifdef DEBUG
-  fprintf(stderr, "\t[track: %s] Delivering packet %d (%d bytes%s)\n", demuxedTrack->MIMEtype(),
+  Log.Error(__FILE__, __LINE__, "\t[track: %s] Delivering packet %d (%d bytes%s)\n", demuxedTrack->MIMEtype(),
 	  packetNum, packetSize,
 	  packetNum == fPacketSizeTable->numCompletedPackets ? " (incomplete)" : "");
 #endif
@@ -885,7 +886,7 @@ Boolean OggFileParser::deliverPacketWithinPage() {
       u_int8_t const mask = 0xFE<<(track->vtoHdrs.ilog_vorbis_mode_count_minus_1);
       u_int8_t const modeNumber = (firstByte&~mask)>>1;
       if (modeNumber >= track->vtoHdrs.vorbis_mode_count) {
-	fprintf(stderr, "Error: Bad mode number %d (>= vorbis_mode_count %d) in Vorbis packet!\n",
+	Log.Error(__FILE__, __LINE__, "Error: Bad mode number %d (>= vorbis_mode_count %d) in Vorbis packet!\n",
 		modeNumber, track->vtoHdrs.vorbis_mode_count);
 	durationInMicroseconds = 0;
       } else {
@@ -969,21 +970,21 @@ void OggFileParser::parseStartOfPage(u_int8_t& header_type_flag,
   }
   skipBytes(4);
 #ifdef DEBUG
-  fprintf(stderr, "\nSaw Ogg page header:\n");
+  Log.Error(__FILE__, __LINE__, "\nSaw Ogg page header:\n");
 #endif
 
   u_int8_t stream_structure_version = get1Byte();
   if (stream_structure_version != 0) {
-    fprintf(stderr, "Saw page with unknown Ogg file version number: 0x%02x\n", stream_structure_version);
+    Log.Error(__FILE__, __LINE__, "Saw page with unknown Ogg file version number: 0x%02x\n", stream_structure_version);
   }
 
   header_type_flag = get1Byte();
 #ifdef DEBUG
-  fprintf(stderr, "\theader_type_flag: 0x%02x (", header_type_flag);
-  if (header_type_flag&0x01) fprintf(stderr, "continuation ");
-  if (header_type_flag&0x02) fprintf(stderr, "bos ");
-  if (header_type_flag&0x04) fprintf(stderr, "eos ");
-  fprintf(stderr, ")\n");
+  Log.Error(__FILE__, __LINE__, "\theader_type_flag: 0x%02x (", header_type_flag);
+  if (header_type_flag&0x01) Log.Error(__FILE__, __LINE__, "continuation ");
+  if (header_type_flag&0x02) Log.Error(__FILE__, __LINE__, "bos ");
+  if (header_type_flag&0x04) Log.Error(__FILE__, __LINE__, "eos ");
+  Log.Error(__FILE__, __LINE__, ")\n");
 #endif  
 
   u_int32_t granule_position1 = byteSwap(get4Bytes());
@@ -993,7 +994,7 @@ void OggFileParser::parseStartOfPage(u_int8_t& header_type_flag,
   u_int32_t CRC_checksum = byteSwap(get4Bytes());
   u_int8_t number_page_segments = get1Byte();
 #ifdef DEBUG
-  fprintf(stderr, "\tgranule_position 0x%08x%08x, bitstream_serial_number 0x%08x, page_sequence_number 0x%08x, CRC_checksum 0x%08x, number_page_segments %d\n", granule_position2, granule_position1, bitstream_serial_number, page_sequence_number, CRC_checksum, number_page_segments);
+  Log.Error(__FILE__, __LINE__, "\tgranule_position 0x%08x%08x, bitstream_serial_number 0x%08x, page_sequence_number 0x%08x, CRC_checksum 0x%08x, number_page_segments %d\n", granule_position2, granule_position1, bitstream_serial_number, page_sequence_number, CRC_checksum, number_page_segments);
 #else
   // Dummy statements to prevent 'unused variable' compiler warnings:
 #define DUMMY_STATEMENT(x) do {x = x;} while (0)
@@ -1007,24 +1008,24 @@ void OggFileParser::parseStartOfPage(u_int8_t& header_type_flag,
   delete fPacketSizeTable/*if any*/; fPacketSizeTable = new PacketSizeTable(number_page_segments);
   u_int8_t lacing_value = 0;
 #ifdef DEBUG
-  fprintf(stderr, "\tsegment_table\n");
+  Log.Error(__FILE__, __LINE__, "\tsegment_table\n");
 #endif
   for (unsigned i = 0; i < number_page_segments; ++i) {
     lacing_value = get1Byte();
 #ifdef DEBUG
-    fprintf(stderr, "\t\t%d:\t%d", i, lacing_value);
+    Log.Error(__FILE__, __LINE__, "\t\t%d:\t%d", i, lacing_value);
 #endif
     fPacketSizeTable->totSizes += lacing_value;
     fPacketSizeTable->size[fPacketSizeTable->numCompletedPackets] += lacing_value;
     if (lacing_value < 255) {
       // This completes a packet:
 #ifdef DEBUG
-      fprintf(stderr, " (->%d)", fPacketSizeTable->size[fPacketSizeTable->numCompletedPackets]);
+      Log.Error(__FILE__, __LINE__, " (->%d)", fPacketSizeTable->size[fPacketSizeTable->numCompletedPackets]);
 #endif
       ++fPacketSizeTable->numCompletedPackets;
     }
 #ifdef DEBUG
-    fprintf(stderr, "\n");
+    Log.Error(__FILE__, __LINE__, "\n");
 #endif
   }
 

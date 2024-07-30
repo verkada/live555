@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // RTCP
 // Implementation
 
+#include <Log.hh>
 #include "RTCP.hh"
 #include "GroupsockHelper.hh"
 #include "rtcp_from_spec.h"
@@ -25,7 +26,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #define snprintf _snprintf
 #endif
 
-#include <Log.hh>
+
 
 ////////// RTCPMemberDatabase //////////
 #define MAX_INT_BUFFER 10
@@ -106,7 +107,7 @@ void RTCPMemberDatabase::reapOldMembers(unsigned threshold) {
     char const* key;
     while ((timeCount = (uintptr_t)(iter->next(key))) != 0) {
 #ifdef DEBUG
-      fprintf(stderr, "reap: checking SSRC 0x%lx: %ld (threshold %d)\n", (unsigned long)key, timeCount, threshold);
+      Log.Error(__FILE__, __LINE__, "reap: checking SSRC 0x%lx: %ld (threshold %d)\n", (unsigned long)key, timeCount, threshold);
 #endif
       if (timeCount < (uintptr_t)threshold) { // this SSRC is old
         uintptr_t ssrc = (uintptr_t)key;
@@ -118,7 +119,7 @@ void RTCPMemberDatabase::reapOldMembers(unsigned threshold) {
 
     if (foundOldMember) {
 #ifdef DEBUG
-        fprintf(stderr, "reap: removing SSRC 0x%x\n", oldSSRC);
+        Log.Error(__FILE__, __LINE__, "reap: removing SSRC 0x%x\n", oldSSRC);
 #endif
 	fOurRTCPInstance.removeSSRC(oldSSRC, False/*keep stats around*/);
     }
@@ -157,7 +158,7 @@ RTCPInstance::RTCPInstance(UsageEnvironment& env, Groupsock* RTCPgs,
     fSpecificRRHandlerTable(NULL),
     fAppHandlerTask(NULL), fAppHandlerClientData(NULL) {
 #ifdef DEBUG
-  fprintf(stderr, "RTCPInstance[%p]::RTCPInstance()\n", this);
+  Log.Error(__FILE__, __LINE__, "RTCPInstance[%p]::RTCPInstance()\n", this);
 #endif
   setupForSRTCP();
 
@@ -558,7 +559,7 @@ void RTCPInstance
     if ((rtcpHdr & 0xE0FE0000) != (0x80000000 | (RTCP_PT_SR<<16)) &&
 	(rtcpHdr & 0xE0FF0000) != (0x80000000 | (RTCP_PT_APP<<16))) {
 #ifdef DEBUG
-      fprintf(stderr, "rejected bad RTCP packet: header 0x%08x\n", rtcpHdr);
+      Log.Error(__FILE__, __LINE__, "rejected bad RTCP packet: header 0x%08x\n", rtcpHdr);
 #endif
       break;
     }
@@ -655,7 +656,7 @@ void RTCPInstance
 	}
         case RTCP_PT_BYE: {
 #ifdef DEBUG
-	  fprintf(stderr, "BYE");
+	  Log.Error(__FILE__, __LINE__, "BYE");
 #endif
 	  // Check whether there was a 'reason for leaving':
 	  if (length > 0) {
@@ -663,7 +664,7 @@ void RTCPInstance
 	    if (reasonLength > length-1) {
 	      // The 'reason' length field is too large!
 #ifdef DEBUG
-	      fprintf(stderr, "\nError: The 'reason' length %d is too large (it should be <= %d)\n",
+	      Log.Error(__FILE__, __LINE__, "\nError: The 'reason' length %d is too large (it should be <= %d)\n",
 		      reasonLength, length-1);
 #endif
 	      reasonLength = length-1;
@@ -674,11 +675,11 @@ void RTCPInstance
 	    }
 	    reason[reasonLength] = '\0';
 #ifdef DEBUG
-	    fprintf(stderr, " (reason:%s)", reason);
+	    Log.Error(__FILE__, __LINE__, " (reason:%s)", reason);
 #endif
 	  }
 #ifdef DEBUG
-	  fprintf(stderr, "\n");
+	  Log.Error(__FILE__, __LINE__, "\n");
 #endif
 	  // If a 'BYE handler' was set, arrange for it to be called at the end of this routine.
 	  // (Note: We don't call it immediately, in case it happens to cause "this" to be deleted.)
@@ -700,22 +701,22 @@ void RTCPInstance
         case RTCP_PT_APP: {
 	  u_int8_t& subtype = rc; // In "APP" packets, the "rc" field gets used as "subtype"
 #ifdef DEBUG
-	  fprintf(stderr, "APP (subtype 0x%02x)\n", subtype);
+	  Log.Error(__FILE__, __LINE__, "APP (subtype 0x%02x)\n", subtype);
 #endif
 	  if (length < 4) {
 #ifdef DEBUG
-	    fprintf(stderr, "\tError: No \"name\" field!\n");
+	    Log.Error(__FILE__, __LINE__, "\tError: No \"name\" field!\n");
 #endif
 	    break;
 	  }
 	  length -= 4;
 #ifdef DEBUG
-	  fprintf(stderr, "\tname:%c%c%c%c\n", pkt[0], pkt[1], pkt[2], pkt[3]);
+	  Log.Error(__FILE__, __LINE__, "\tname:%c%c%c%c\n", pkt[0], pkt[1], pkt[2], pkt[3]);
 #endif
 	  u_int32_t nameBytes = (pkt[0]<<24)|(pkt[1]<<16)|(pkt[2]<<8)|(pkt[3]);
 	  ADVANCE(4); // skip over "name", to the 'application-dependent data'
 #ifdef DEBUG
-	  fprintf(stderr, "\tapplication-dependent data size: %d bytes\n", length);
+	  Log.Error(__FILE__, __LINE__, "\tapplication-dependent data size: %d bytes\n", length);
 #endif
 
 	  // If an 'APP' packet handler was set, call it now:
@@ -748,7 +749,7 @@ void RTCPInstance
 	      // Make sure "itemLen" allows for at least 1 zero byte at the end of the chunk:
 	      if (itemLen + 1 > length || pkt[itemLen] != 0) break;
 
-	      fprintf(stderr, "\t\t%s:%s\n",
+	      Log.Error(__FILE__, __LINE__, "\t\t%s:%s\n",
 		      itemType == 1 ? "CNAME" :
 		      itemType == 2 ? "NAME" :
 		      itemType == 3 ? "EMAIL" :
@@ -780,14 +781,14 @@ void RTCPInstance
 	}
         case RTCP_PT_RTPFB: {
 #ifdef DEBUG
-	  fprintf(stderr, "RTPFB(unhandled)\n");
+	  Log.Error(__FILE__, __LINE__, "RTPFB(unhandled)\n");
 #endif
 	  subPacketOK = True;
 	  break;
 	}
         case RTCP_PT_PSFB: {
 #ifdef DEBUG
-	  fprintf(stderr, "PSFB(unhandled)\n");
+	  Log.Error(__FILE__, __LINE__, "PSFB(unhandled)\n");
 	  // Temporary code to show "Receiver Estimated Maximum Bitrate" (REMB) feedback reports:
 	  //#####
 	  if (length >= 12 && pkt[4] == 'R' && pkt[5] == 'E' && pkt[6] == 'M' && pkt[7] == 'B') {
@@ -798,7 +799,7 @@ void RTCPInstance
 	      remb *= 2.0;
 	      exp /= 2;
 	    }
-	    fprintf(stderr, "\tReceiver Estimated Max Bitrate (REMB): %g bps\n", remb);
+	    Log.Error(__FILE__, __LINE__, "\tReceiver Estimated Max Bitrate (REMB): %g bps\n", remb);
 	  }
 #endif
 	  subPacketOK = True;
@@ -806,42 +807,42 @@ void RTCPInstance
 	}
         case RTCP_PT_XR: {
 #ifdef DEBUG
-	  fprintf(stderr, "XR(unhandled)\n");
+	  Log.Error(__FILE__, __LINE__, "XR(unhandled)\n");
 #endif
 	  subPacketOK = True;
 	  break;
 	}
         case RTCP_PT_AVB: {
 #ifdef DEBUG
-	  fprintf(stderr, "AVB(unhandled)\n");
+	  Log.Error(__FILE__, __LINE__, "AVB(unhandled)\n");
 #endif
 	  subPacketOK = True;
 	  break;
 	}
         case RTCP_PT_RSI: {
 #ifdef DEBUG
-	  fprintf(stderr, "RSI(unhandled)\n");
+	  Log.Error(__FILE__, __LINE__, "RSI(unhandled)\n");
 #endif
 	  subPacketOK = True;
 	  break;
 	}
         case RTCP_PT_TOKEN: {
 #ifdef DEBUG
-	  fprintf(stderr, "TOKEN(unhandled)\n");
+	  Log.Error(__FILE__, __LINE__, "TOKEN(unhandled)\n");
 #endif
 	  subPacketOK = True;
 	  break;
 	}
         case RTCP_PT_IDMS: {
 #ifdef DEBUG
-	  fprintf(stderr, "IDMS(unhandled)\n");
+	  Log.Error(__FILE__, __LINE__, "IDMS(unhandled)\n");
 #endif
 	  subPacketOK = True;
 	  break;
 	}
         default: {
 #ifdef DEBUG
-	  fprintf(stderr, "UNKNOWN TYPE(0x%x)\n", pt);
+	  Log.Error(__FILE__, __LINE__, "UNKNOWN TYPE(0x%x)\n", pt);
 #endif
 	  subPacketOK = True;
 	  break;

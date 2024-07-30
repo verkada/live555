@@ -20,6 +20,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // an updated estimate of the time gap between chunks.
 // Implementation
 
+#include <Log.hh>
 #include "MPEG2TransportStreamFramer.hh"
 #include <GroupsockHelper.hh> // for "gettimeofday()"
 
@@ -237,7 +238,7 @@ Boolean MPEG2TransportStreamFramer::updateTSPacketDurationEstimate(unsigned char
     pidStatus = new PIDStatus(clock, timeNow);
     fPIDStatusTable->Add((char*)pid, pidStatus);
 #ifdef DEBUG_PCR
-    fprintf(stderr, "PID 0x%x, FIRST PCR 0x%08x+%d:%03x == %f @ %f, pkt #%lu\n", pid, pcrBaseHigh, pkt[10]>>7, pcrExt, clock, timeNow, fTSPacketCount);
+    Log.Error(__FILE__, __LINE__, "PID 0x%x, FIRST PCR 0x%08x+%d:%03x == %f @ %f, pkt #%lu\n", pid, pcrBaseHigh, pkt[10]>>7, pcrExt, clock, timeNow, fTSPacketCount);
 #endif
   } else {
     // We've seen this PID's PCR before; update our per-packet duration estimate:
@@ -279,7 +280,7 @@ Boolean MPEG2TransportStreamFramer::updateTSPacketDurationEstimate(unsigned char
       pidStatus->firstRealTime = timeNow;
     }
 #ifdef DEBUG_PCR
-    fprintf(stderr, "PID 0x%x, PCR 0x%08x+%d:%03x == %f @ %f (diffs %f @ %f), pkt #%lu, discon %d => this duration %f, new estimate %f, mean PCR period=%f\n", pid, pcrBaseHigh, pkt[10]>>7, pcrExt, clock, timeNow, clock - pidStatus->firstClock, timeNow - pidStatus->firstRealTime, fTSPacketCount, discontinuity_indicator != 0, durationPerPacket, fTSPacketDurationEstimate, meanPCRPeriod );
+    Log.Error(__FILE__, __LINE__, "PID 0x%x, PCR 0x%08x+%d:%03x == %f @ %f (diffs %f @ %f), pkt #%lu, discon %d => this duration %f, new estimate %f, mean PCR period=%f\n", pid, pcrBaseHigh, pkt[10]>>7, pcrExt, clock, timeNow, clock - pidStatus->firstClock, timeNow - pidStatus->firstRealTime, fTSPacketCount, discontinuity_indicator != 0, durationPerPacket, fTSPacketDurationEstimate, meanPCRPeriod );
 #endif
   }
 

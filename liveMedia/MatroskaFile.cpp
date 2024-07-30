@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A class that encapsulates a Matroska file.
 // Implementation
 
+#include <Log.hh>
 #include "MatroskaFileParser.hh"
 #include "MatroskaDemuxedTrack.hh"
 #include <ByteStreamFileSource.hh>
@@ -224,9 +225,9 @@ void MatroskaFile::handleEndOfTrackHeaderParsing() {
   }
   
 #ifdef DEBUG
-  if (fChosenVideoTrackNumber > 0) fprintf(stderr, "Chosen video track: #%d\n", fChosenVideoTrackNumber); else fprintf(stderr, "No chosen video track\n");
-  if (fChosenAudioTrackNumber > 0) fprintf(stderr, "Chosen audio track: #%d\n", fChosenAudioTrackNumber); else fprintf(stderr, "No chosen audio track\n");
-  if (fChosenSubtitleTrackNumber > 0) fprintf(stderr, "Chosen subtitle track: #%d\n", fChosenSubtitleTrackNumber); else fprintf(stderr, "No chosen subtitle track\n");
+  if (fChosenVideoTrackNumber > 0) Log.Error(__FILE__, __LINE__, "Chosen video track: #%d\n", fChosenVideoTrackNumber); else Log.Error(__FILE__, __LINE__, "No chosen video track\n");
+  if (fChosenAudioTrackNumber > 0) Log.Error(__FILE__, __LINE__, "Chosen audio track: #%d\n", fChosenAudioTrackNumber); else Log.Error(__FILE__, __LINE__, "No chosen audio track\n");
+  if (fChosenSubtitleTrackNumber > 0) Log.Error(__FILE__, __LINE__, "Chosen subtitle track: #%d\n", fChosenSubtitleTrackNumber); else Log.Error(__FILE__, __LINE__, "No chosen subtitle track\n");
 #endif
 
   // Delete our parser, because it's done its job now:

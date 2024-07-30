@@ -18,13 +18,14 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A RTSP server
 // Implementation
 
+#include <Log.hh>
 #include "RTSPServer.hh"
 #include "RTSPCommon.hh"
 #include "RTSPRegisterSender.hh"
 #include "Base64.hh"
 #include <GroupsockHelper.hh>
 
-#include <Log.hh>
+
 
 ////////// RTSPServer implementation //////////
 

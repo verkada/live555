@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A parser for a MPEG Transport Stream
 // Implementation
 
+#include <Log.hh>
 #include "MPEG2TransportStreamParser.hh"
 
 #define NUM_PIDS 0x10000
@@ -116,7 +117,7 @@ Boolean MPEG2TransportStreamParser::parse() {
       // Check the "transport_error_indicator" flag; reject the packet if it's set:
       if ((flagsPlusPID&0x8000) != 0) {
 #ifdef DEBUG_ERRORS
-	fprintf(stderr, "MPEG2TransportStreamParser::parse() Rejected packet with \"transport_error_indicator\" flag set!\n");
+	Log.Error(__FILE__, __LINE__, "MPEG2TransportStreamParser::parse() Rejected packet with \"transport_error_indicator\" flag set!\n");
 #endif
 	continue;
       }
@@ -124,7 +125,7 @@ Boolean MPEG2TransportStreamParser::parse() {
       // Ignore "transport_priority"
       u_int16_t PID = flagsPlusPID&0x1FFF;
 #ifdef DEBUG_CONTENTS
-      fprintf(stderr, "\nTransport Packet: payload_unit_start_indicator: %d; PID: 0x%04x\n",
+      Log.Error(__FILE__, __LINE__, "\nTransport Packet: payload_unit_start_indicator: %d; PID: 0x%04x\n",
 	      pusi, PID);
 #endif
 
@@ -132,27 +133,27 @@ Boolean MPEG2TransportStreamParser::parse() {
       // Reject any packets where the "transport_scrambling_control" field is not zero:
       if ((controlPlusContinuity_counter&0xC0) != 0) {
 #ifdef DEBUG_ERRORS
-	fprintf(stderr, "MPEG2TransportStreamParser::parse() Rejected packet with \"transport_scrambling_control\" set to non-zero value %d!\n", (controlPlusContinuity_counter&0xC0)>>6);
+	Log.Error(__FILE__, __LINE__, "MPEG2TransportStreamParser::parse() Rejected packet with \"transport_scrambling_control\" set to non-zero value %d!\n", (controlPlusContinuity_counter&0xC0)>>6);
 #endif
 	continue;
       }
       u_int8_t adaptation_field_control = (controlPlusContinuity_counter&0x30)>>4; // 2 bits
 #ifdef DEBUG_CONTENTS
       u_int8_t continuity_counter = (controlPlusContinuity_counter&0x0F); // 4 bits
-      fprintf(stderr, "adaptation_field_control: %d; continuity_counter: 0x%X\n", adaptation_field_control, continuity_counter);
+      Log.Error(__FILE__, __LINE__, "adaptation_field_control: %d; continuity_counter: 0x%X\n", adaptation_field_control, continuity_counter);
 #endif
 
       u_int8_t totalAdaptationFieldSize = adaptation_field_control < 2 ? 0 : parseAdaptationField();
 #ifdef DEBUG_ERRORS
       if (adaptation_field_control == 2 && totalAdaptationFieldSize != 1+183) {
-	fprintf(stderr, "MPEG2TransportStreamParser::parse() Warning: Got an inconsistent \"totalAdaptationFieldSize\" %d for adaptation_field_control == 2\n", totalAdaptationFieldSize);
+	Log.Error(__FILE__, __LINE__, "MPEG2TransportStreamParser::parse() Warning: Got an inconsistent \"totalAdaptationFieldSize\" %d for adaptation_field_control == 2\n", totalAdaptationFieldSize);
       }
 #endif
 
       int numDataBytes = TRANSPORT_PACKET_SIZE-4-totalAdaptationFieldSize;
       if (numDataBytes > 0) {
 #ifdef DEBUG_CONTENTS
-	fprintf(stderr, "+%d data bytes:\n", numDataBytes);
+	Log.Error(__FILE__, __LINE__, "+%d data bytes:\n", numDataBytes);
 #endif
 	if (!processDataBytes(PID, pusi, numDataBytes)) {
 	  // The parsing got deferred (to be resumed later when a pending read happens)
@@ -163,7 +164,7 @@ Boolean MPEG2TransportStreamParser::parse() {
     }
   } catch (int /*e*/) {
 #ifdef DEBUG_CONTENTS
-    fprintf(stderr, "MPEG2TransportStreamParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
+    Log.Error(__FILE__, __LINE__, "MPEG2TransportStreamParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
 #endif
     return False; // the parsing got interrupted
   }
@@ -172,16 +173,16 @@ Boolean MPEG2TransportStreamParser::parse() {
 u_int8_t MPEG2TransportStreamParser::parseAdaptationField() {
   unsigned startPos = curOffset();
 #ifdef DEBUG_CONTENTS
-  fprintf(stderr, "\tAdaptation Field:\n");
+  Log.Error(__FILE__, __LINE__, "\tAdaptation Field:\n");
 #endif
   u_int8_t adaptation_field_length = get1Byte();
 #ifdef DEBUG_CONTENTS
-  fprintf(stderr, "\t\tadaptation_field_length: %d\n", adaptation_field_length);
+  Log.Error(__FILE__, __LINE__, "\t\tadaptation_field_length: %d\n", adaptation_field_length);
 #endif
   if (adaptation_field_length > 0) {
     u_int8_t flags = get1Byte();
 #ifdef DEBUG_CONTENTS
-    fprintf(stderr, "\t\tadaptation field flags: 0x%02x\n", flags);
+    Log.Error(__FILE__, __LINE__, "\t\tadaptation field flags: 0x%02x\n", flags);
 #endif
     if ((flags&0x10) != 0) { // PCR_flag
       u_int32_t first32PCRBits = get4Bytes();
@@ -192,7 +193,7 @@ u_int8_t MPEG2TransportStreamParser::parseAdaptationField() {
       if ((last16PCRBits&0x8000) != 0) PCR += 1/90000.0; // add in low-bit (if set)
       PCR += (last16PCRBits&0x01FF)/27000000.0; // add in extension
 #ifdef DEBUG_CONTENTS
-      fprintf(stderr, "\t\tPCR: %.10f\n", PCR);
+      Log.Error(__FILE__, __LINE__, "\t\tPCR: %.10f\n", PCR);
 #endif
     }
     if ((flags&0x08) != 0) { // OPCR_flag
@@ -204,7 +205,7 @@ u_int8_t MPEG2TransportStreamParser::parseAdaptationField() {
       if ((last16OPCRBits&0x8000) != 0) OPCR += 1/90000.0; // add in low-bit (if set)
       OPCR += (last16OPCRBits&0x01FF)/27000000.0; // add in extension
 #ifdef DEBUG_CONTENTS
-      fprintf(stderr, "\t\tOPCR: %.10f\n", OPCR);
+      Log.Error(__FILE__, __LINE__, "\t\tOPCR: %.10f\n", OPCR);
 #endif
     }
     if ((flags&0x04) != 0) { // splicing_point_flag
@@ -213,20 +214,20 @@ u_int8_t MPEG2TransportStreamParser::parseAdaptationField() {
     if ((flags&0x02) != 0) { // transport_private_data_flag
       u_int8_t transport_private_data_length = get1Byte();
 #ifdef DEBUG_CONTENTS
-      fprintf(stderr, "\t\ttransport_private_data_length: %d\n", transport_private_data_length);
+      Log.Error(__FILE__, __LINE__, "\t\ttransport_private_data_length: %d\n", transport_private_data_length);
 #endif
       skipBytes(transport_private_data_length); // "private_data_byte"s
     }
     if ((flags&0x01) != 0) { // adaptation_field_extension_flag
 #ifdef DEBUG_CONTENTS
       u_int8_t adaptation_field_extension_length = get1Byte();
-      fprintf(stderr, "\t\tadaptation_field_extension_length: %d\n", adaptation_field_extension_length);
+      Log.Error(__FILE__, __LINE__, "\t\tadaptation_field_extension_length: %d\n", adaptation_field_extension_length);
 #else
       skipBytes(1); // adaptation_field_extension_length
 #endif
       u_int8_t flagsPlusReserved = get1Byte();
 #ifdef DEBUG_CONTENTS
-      fprintf(stderr, "\t\t\tflagsPlusReserved: 0x%02x\n", flagsPlusReserved);
+      Log.Error(__FILE__, __LINE__, "\t\t\tflagsPlusReserved: 0x%02x\n", flagsPlusReserved);
 #endif
       if ((flagsPlusReserved&0x80) != 0) { // ltw_flag
 	skipBytes(2); // "ltw_valid_flag" + "ltw_offset"
@@ -241,7 +242,7 @@ u_int8_t MPEG2TransportStreamParser::parseAdaptationField() {
       int numBytesLeft = (1 + adaptation_field_length) - (curOffset() - startPos);
       if (numBytesLeft > 0) {
 #ifdef DEBUG_CONTENTS
-	fprintf(stderr, "\t\t+%d reserved bytes\n", numBytesLeft);
+	Log.Error(__FILE__, __LINE__, "\t\t+%d reserved bytes\n", numBytesLeft);
 #endif
 	skipBytes(numBytesLeft);
       }
@@ -250,12 +251,12 @@ u_int8_t MPEG2TransportStreamParser::parseAdaptationField() {
     int numBytesLeft = (1 + adaptation_field_length) - (curOffset() - startPos);
     if (numBytesLeft > 0) {
 #ifdef DEBUG_CONTENTS
-	fprintf(stderr, "\t\t+%d stuffing bytes\n", numBytesLeft);
+	Log.Error(__FILE__, __LINE__, "\t\t+%d stuffing bytes\n", numBytesLeft);
 #endif
 #ifdef DEBUG_ERRORS
       for (int i = 0; i < numBytesLeft; ++i) {
 	if (get1Byte() != 0xFF) {
-	  fprintf(stderr, "WARNING: non-stuffing byte in adaptation_field\n");
+	  Log.Error(__FILE__, __LINE__, "WARNING: non-stuffing byte in adaptation_field\n");
 	}
       }
 #else
@@ -268,7 +269,7 @@ u_int8_t MPEG2TransportStreamParser::parseAdaptationField() {
   unsigned totalAdaptationFieldSize = curOffset() - startPos;
 #ifdef DEBUG_ERRORS
   if (totalAdaptationFieldSize != 1 + adaptation_field_length) {
-    fprintf(stderr, "MPEG2TransportStreamParser::parseAdaptationField() Warning: Got an inconsistent \"totalAdaptationFieldSize\" %d; expected %d\n", totalAdaptationFieldSize, 1 + adaptation_field_length);
+    Log.Error(__FILE__, __LINE__, "MPEG2TransportStreamParser::parseAdaptationField() Warning: Got an inconsistent \"totalAdaptationFieldSize\" %d; expected %d\n", totalAdaptationFieldSize, 1 + adaptation_field_length);
   }  
 #endif
   return totalAdaptationFieldSize;
@@ -280,7 +281,7 @@ Boolean MPEG2TransportStreamParser
 
   if (pidState == NULL) { // unknown PID
 #ifdef DEBUG_CONTENTS
-    fprintf(stderr, "\tUnknown PID\n");
+    Log.Error(__FILE__, __LINE__, "\tUnknown PID\n");
 #endif
     skipBytes(numDataBytes);
     return True;

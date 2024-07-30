@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Demultiplexer for a MPEG 1 or 2 Program Stream
 // Implementation
 
+#include <Log.hh>
 #include "MPEG1or2Demux.hh"
 #include "MPEG1or2DemuxedElementaryStream.hh"
 #include "StreamParser.hh"
@@ -375,7 +376,7 @@ unsigned char MPEGProgramStreamParser::parse() {
     return acquiredStreamTagId;
   } catch (int /*e*/) {
 #ifdef DEBUG
-    fprintf(stderr, "MPEGProgramStreamParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
+    Log.Error(__FILE__, __LINE__, "MPEGProgramStreamParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
     fflush(stderr);
 #endif
     return 0;  // the parsing got interrupted
@@ -393,7 +394,7 @@ static inline Boolean isPacketStartCode(unsigned code) {
 
 void MPEGProgramStreamParser::parsePackHeader() {
 #ifdef DEBUG
-  fprintf(stderr, "parsing pack header\n"); fflush(stderr);
+  Log.Error(__FILE__, __LINE__, "parsing pack header\n"); fflush(stderr);
 #endif
   unsigned first4Bytes;
   while (1) {
@@ -406,13 +407,13 @@ void MPEGProgramStreamParser::parsePackHeader() {
       break;
     } else if (first4Bytes == SYSTEM_HEADER_START_CODE) {
 #ifdef DEBUG
-      fprintf(stderr, "found system header instead of pack header\n");
+      Log.Error(__FILE__, __LINE__, "found system header instead of pack header\n");
 #endif
       setParseState(PARSING_SYSTEM_HEADER);
       return;
     } else if (isPacketStartCode(first4Bytes)) {
 #ifdef DEBUG
-      fprintf(stderr, "found packet start code 0x%02x instead of pack header\n", first4Bytes);
+      Log.Error(__FILE__, __LINE__, "found packet start code 0x%02x instead of pack header\n", first4Bytes);
 #endif
       setParseState(PARSING_PES_PACKET);
       return;
@@ -442,9 +443,9 @@ void MPEGProgramStreamParser::parsePackHeader() {
     skipBits(24);
 
 #if defined(DEBUG_TIMESTAMPS) || defined(DEBUG_SCR_TIMESTAMPS)
-    fprintf(stderr, "pack hdr system_clock_reference_base: 0x%x",
+    Log.Error(__FILE__, __LINE__, "pack hdr system_clock_reference_base: 0x%x",
 	    scr.highBit);
-    fprintf(stderr, "%08x\n", scr.remainingBits);
+    Log.Error(__FILE__, __LINE__, "%08x\n", scr.remainingBits);
 #endif
   } else if ((nextByte&0xC0) == 0x40) { // MPEG-2
     fUsingDemux->fMPEGversion = 2;
@@ -461,10 +462,10 @@ void MPEGProgramStreamParser::parsePackHeader() {
     skipBits(5);
 
 #if defined(DEBUG_TIMESTAMPS) || defined(DEBUG_SCR_TIMESTAMPS)
-    fprintf(stderr, "pack hdr system_clock_reference_base: 0x%x",
+    Log.Error(__FILE__, __LINE__, "pack hdr system_clock_reference_base: 0x%x",
 	    scr.highBit);
-    fprintf(stderr, "%08x\n", scr.remainingBits);
-    fprintf(stderr, "pack hdr system_clock_reference_extension: 0x%03x\n",
+    Log.Error(__FILE__, __LINE__, "%08x\n", scr.remainingBits);
+    Log.Error(__FILE__, __LINE__, "pack hdr system_clock_reference_extension: 0x%03x\n",
 	    scr.extension);
 #endif
     unsigned char pack_stuffing_length = getBits(3);
@@ -479,7 +480,7 @@ void MPEGProgramStreamParser::parsePackHeader() {
 
 void MPEGProgramStreamParser::parseSystemHeader() {
 #ifdef DEBUG
-  fprintf(stderr, "parsing system header\n"); fflush(stderr);
+  Log.Error(__FILE__, __LINE__, "parsing system header\n"); fflush(stderr);
 #endif
   unsigned next4Bytes = test4Bytes();
   if (next4Bytes != SYSTEM_HEADER_START_CODE) {
@@ -489,7 +490,7 @@ void MPEGProgramStreamParser::parseSystemHeader() {
   }
 
 #ifdef DEBUG
-  fprintf(stderr, "saw system_header_start_code\n"); fflush(stderr);
+  Log.Error(__FILE__, __LINE__, "saw system_header_start_code\n"); fflush(stderr);
 #endif
   skipBytes(4); // we've already seen the system_header_start_code
 
@@ -533,7 +534,7 @@ Boolean MPEGProgramStreamParser
 
 unsigned char MPEGProgramStreamParser::parsePESPacket() {
 #ifdef DEBUG
-  fprintf(stderr, "parsing PES packet\n"); fflush(stderr);
+  Log.Error(__FILE__, __LINE__, "parsing PES packet\n"); fflush(stderr);
 #endif
   unsigned next4Bytes = test4Bytes();
   if (!isPacketStartCode(next4Bytes)) {
@@ -543,7 +544,7 @@ unsigned char MPEGProgramStreamParser::parsePESPacket() {
   }
 
 #ifdef DEBUG
-  fprintf(stderr, "saw packet_start_code_prefix\n"); fflush(stderr);
+  Log.Error(__FILE__, __LINE__, "saw packet_start_code_prefix\n"); fflush(stderr);
 #endif
   skipBytes(3); // we've already seen the packet_start_code_prefix
 
@@ -571,12 +572,12 @@ unsigned char MPEGProgramStreamParser::parsePESPacket() {
 #endif
 #ifdef DEBUG
   static unsigned frameCount = 1;
-  fprintf(stderr, "%d, saw %s stream: 0x%02x\n", frameCount, streamTypeStr, streamNum); fflush(stderr);
+  Log.Error(__FILE__, __LINE__, "%d, saw %s stream: 0x%02x\n", frameCount, streamTypeStr, streamNum); fflush(stderr);
 #endif
 
   unsigned short PES_packet_length = get2Bytes();
 #ifdef DEBUG
-  fprintf(stderr, "PES_packet_length: %d\n", PES_packet_length); fflush(stderr);
+  Log.Error(__FILE__, __LINE__, "PES_packet_length: %d\n", PES_packet_length); fflush(stderr);
 #endif
 
   // Parse over the rest of the header, until we get to the packet data itself.
@@ -644,7 +645,7 @@ unsigned char MPEGProgramStreamParser::parsePESPacket() {
 #endif
       unsigned char PES_header_data_length = (next3Bytes&0x0000FF);
 #ifdef DEBUG
-      fprintf(stderr, "PES_header_data_length: 0x%02x\n", PES_header_data_length); fflush(stderr);
+      Log.Error(__FILE__, __LINE__, "PES_header_data_length: 0x%02x\n", PES_header_data_length); fflush(stderr);
 #endif
 #ifdef DEBUG_TIMESTAMPS
       if (PTS_DTS_flags == 0x2 && PES_header_data_length >= 5) {
@@ -679,11 +680,11 @@ unsigned char MPEGProgramStreamParser::parsePESPacket() {
     }
   }
 #ifdef DEBUG_TIMESTAMPS
-  fprintf(stderr, "%s stream, ", streamTypeStr);
-  fprintf(stderr, "packet presentation_time_stamp: 0x%x", pts_highBit);
-  fprintf(stderr, "%08x\n", pts_remainingBits);
-  fprintf(stderr, "\t\tpacket decoding_time_stamp: 0x%x", dts_highBit);
-  fprintf(stderr, "%08x\n", dts_remainingBits);
+  Log.Error(__FILE__, __LINE__, "%s stream, ", streamTypeStr);
+  Log.Error(__FILE__, __LINE__, "packet presentation_time_stamp: 0x%x", pts_highBit);
+  Log.Error(__FILE__, __LINE__, "%08x\n", pts_remainingBits);
+  Log.Error(__FILE__, __LINE__, "\t\tpacket decoding_time_stamp: 0x%x", dts_highBit);
+  Log.Error(__FILE__, __LINE__, "%08x\n", dts_remainingBits);
 #endif
 
   // The rest of the packet will be the "PES_packet_data_byte"s
@@ -724,7 +725,7 @@ unsigned char MPEGProgramStreamParser::parsePESPacket() {
       getBytes(out.to, numBytesToCopy);
       out.frameSize = numBytesToCopy;
 #ifdef DEBUG
-      fprintf(stderr, "%d, %d bytes of PES_packet_data (out.maxSize: %d); first 4 bytes: 0x%08x\n", frameCount, numBytesToCopy, out.maxSize, next4Bytes); fflush(stderr);
+      Log.Error(__FILE__, __LINE__, "%d, %d bytes of PES_packet_data (out.maxSize: %d); first 4 bytes: 0x%08x\n", frameCount, numBytesToCopy, out.maxSize, next4Bytes); fflush(stderr);
 #endif
       // set out.presentationTime later #####
       acquiredStreamIdTag = stream_id;
@@ -734,7 +735,7 @@ unsigned char MPEGProgramStreamParser::parsePESPacket() {
       // We can't deliver this frame until he asks for it, so punt for now.
       // The next time he asks for a frame, he'll get it.
 #ifdef DEBUG
-      fprintf(stderr, "%d, currently undeliverable PES data; first 4 bytes: 0x%08x - currently undeliverable!\n", frameCount, next4Bytes); fflush(stderr);
+      Log.Error(__FILE__, __LINE__, "%d, currently undeliverable PES data; first 4 bytes: 0x%08x - currently undeliverable!\n", frameCount, next4Bytes); fflush(stderr);
 #endif
       restoreSavedParserState(); // so we read from the beginning next time
       fUsingDemux->fHaveUndeliveredData = True;

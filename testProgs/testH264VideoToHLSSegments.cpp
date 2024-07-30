@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // HLS (HTTP Live Streaming) segments, plus a ".m3u8" file that can be accessed via a web browser.
 // main program
 
+#include <Log.hh>
 #include "liveMedia.hh"
 #include "BasicUsageEnvironment.hh"
 
@@ -92,7 +93,7 @@ void segmentationCallback(void* /*clientData*/,
 	  segmentDuration,
 	  segmentFileName);
   
-  fprintf(stderr, "Wrote segment \"%s\" (duration: %f seconds)\n", segmentFileName, segmentDuration);
+  Log.Error(__FILE__, __LINE__, "Wrote segment \"%s\" (duration: %f seconds)\n", segmentFileName, segmentDuration);
 }
 
 void afterPlaying(void* /*clientData*/) {
@@ -101,6 +102,6 @@ void afterPlaying(void* /*clientData*/) {
   // Complete and close our ".m3u8" file:
   fprintf(ourM3U8Fid, "#EXT-X-ENDLIST\n");
 
-  fprintf(stderr, "Wrote %s.m3u8\n", OUR_HLS_FILENAME_PREFIX);
+  Log.Error(__FILE__, __LINE__, "Wrote %s.m3u8\n", OUR_HLS_FILENAME_PREFIX);
   exit(0);
 }

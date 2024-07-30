@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A source object for AMR audio files (as defined in RFC 4867, section 5)
 // Implementation
 
+#include <Log.hh>
 #include "AMRAudioFileSource.hh"
 #include "InputFile.hh"
 #include "GroupsockHelper.hh"
@@ -70,7 +71,7 @@ AMRAudioFileSource::createNew(UsageEnvironment& env, char const* fileName) {
     magicNumberOK = True;
 
 #ifdef DEBUG
-    fprintf(stderr, "isWideband: %d, numChannels: %d\n",
+    Log.Error(__FILE__, __LINE__, "isWideband: %d, numChannels: %d\n",
 	    isWideband, numChannels);
 #endif
     return new AMRAudioFileSource(env, fid, isWideband, numChannels);
@@ -127,20 +128,20 @@ void AMRAudioFileSource::doGetNextFrame() {
     }
     if ((fLastFrameHeader&0x83) != 0) {
 #ifdef DEBUG
-      fprintf(stderr, "Invalid frame header 0x%02x (padding bits (0x83) are not zero)\n", fLastFrameHeader);
+      Log.Error(__FILE__, __LINE__, "Invalid frame header 0x%02x (padding bits (0x83) are not zero)\n", fLastFrameHeader);
 #endif
     } else {
       unsigned char ft = (fLastFrameHeader&0x78)>>3;
       fFrameSize = fIsWideband ? frameSizeWideband[ft] : frameSize[ft];
       if (fFrameSize == FT_INVALID) {
 #ifdef DEBUG
-	fprintf(stderr, "Invalid FT field %d (from frame header 0x%02x)\n",
+	Log.Error(__FILE__, __LINE__, "Invalid FT field %d (from frame header 0x%02x)\n",
 		ft, fLastFrameHeader);
 #endif
       } else {
 	// The frame header is OK
 #ifdef DEBUG
-	fprintf(stderr, "Valid frame header 0x%02x -> ft %d -> frame size %d\n", fLastFrameHeader, ft, fFrameSize);
+	Log.Error(__FILE__, __LINE__, "Valid frame header 0x%02x -> ft %d -> frame size %d\n", fLastFrameHeader, ft, fFrameSize);
 #endif
 	break;
       }

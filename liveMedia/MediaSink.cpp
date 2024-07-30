@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Media Sinks
 // Implementation
 
+#include <Log.hh>
 #include "MediaSink.hh"
 #include "GroupsockHelper.hh"
 #include <string.h>
@@ -132,7 +133,7 @@ OutPacketBuffer::~OutPacketBuffer() {
 void OutPacketBuffer::enqueue(unsigned char const* from, unsigned numBytes) {
   if (numBytes > totalBytesAvailable()) {
 #ifdef DEBUG
-    fprintf(stderr, "OutPacketBuffer::enqueue() warning: %d > %d\n", numBytes, totalBytesAvailable());
+    Log.Error(__FILE__, __LINE__, "OutPacketBuffer::enqueue() warning: %d > %d\n", numBytes, totalBytesAvailable());
 #endif
     numBytes = totalBytesAvailable();
   }

@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Helper routines to implement 'group sockets'
 // Implementation
 
+#include <Log.hh>
 #include "GroupsockHelper.hh"
 
 #if (defined(__WIN32__) || defined(_WIN32)) && !defined(__MINGW32__)
@@ -48,7 +49,7 @@ extern "C" int initializeWinsockIfNecessary();
 #endif
 #include <stdio.h>
 
-#include <Log.hh>
+
 
 // By default, use INADDR_ANY for the sending and receiving interfaces (IPv4 only):
 ipv4AddressBits SendingInterfaceAddr = INADDR_ANY;

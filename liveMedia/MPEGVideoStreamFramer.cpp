@@ -19,10 +19,11 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 //   headers and frames
 // Implementation
 
+#include <Log.hh>
 #include "MPEGVideoStreamParser.hh"
 #include <GroupsockHelper.hh>
 
-#include <Log.hh>
+
 
 ////////// TimeCode implementation //////////
 
@@ -109,7 +110,7 @@ void MPEGVideoStreamFramer
     --diffPT.tv_sec;
     diffPT.tv_usec += 1000000;
   }
-  fprintf(stderr, "MPEGVideoStreamFramer::computePresentationTime(%d) -> %lu.%06ld [%lu.%06ld]\n", numAdditionalPictures, fPresentationTime.tv_sec, fPresentationTime.tv_usec, diffPT.tv_sec, diffPT.tv_usec);
+  Log.Error(__FILE__, __LINE__, "MPEGVideoStreamFramer::computePresentationTime(%d) -> %lu.%06ld [%lu.%06ld]\n", numAdditionalPictures, fPresentationTime.tv_sec, fPresentationTime.tv_usec, diffPT.tv_sec, diffPT.tv_usec);
 #endif
 }
 

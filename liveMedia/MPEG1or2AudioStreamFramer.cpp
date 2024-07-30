@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A filter that breaks up an MPEG (1,2) audio elementary stream into frames
 // Implementation
 
+#include <Log.hh>
 #include "MPEG1or2AudioStreamFramer.hh"
 #include "StreamParser.hh"
 #include "MP3Internals.hh"
@@ -203,7 +204,7 @@ unsigned MPEG1or2AudioStreamParser::parse(unsigned& numTruncatedBytes) {
     return frameSize;
   } catch (int /*e*/) {
 #ifdef DEBUG
-    fprintf(stderr, "MPEG1or2AudioStreamParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
+    Log.Error(__FILE__, __LINE__, "MPEG1or2AudioStreamParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
 #endif
     return 0;  // the parsing got interrupted
   }

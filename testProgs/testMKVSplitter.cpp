@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // (video, audio, subtitles), and outputs each track to a file.
 // main program
 
+#include <Log.hh>
 #include <liveMedia.hh>
 #include <BasicUsageEnvironment.hh>
 
@@ -93,7 +94,7 @@ void onMatroskaFileCreation(MatroskaFile* matroskaFile, void* /*clientData*/) {
 	= matroskaFile->createFileSinkForTrackNumber(trackNumber, fileName);
     if (trackState[i].sink != NULL) {
       ++numActiveTracks;
-      fprintf(stderr, "Created output file \"%s\" for track %d\n", fileName, trackNumber);
+      Log.Error(__FILE__, __LINE__, "Created output file \"%s\" for track %d\n", fileName, trackNumber);
     }
   }
 

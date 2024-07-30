@@ -19,6 +19,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // complete codec frames (as many as possible) into each RTP packet.
 // Implementation
 
+#include <Log.hh>
 #include "MultiFramedRTPSink.hh"
 #include "GroupsockHelper.hh"
 
@@ -377,7 +378,7 @@ void MultiFramedRTPSink::sendPacketIfNecessary() {
 	// the packet in place.  Instead, we have to make a copy (on the stack) of
 	// the packet, before encrypting/tagging/sending it:
 	if (fOutBuf->curPacketSize() + SRTP_MKI_LENGTH + SRTP_AUTH_TAG_LENGTH > MAX_UDP_PACKET_SIZE) {
-	  fprintf(stderr, "MultiFramedRTPSink::sendPacketIfNecessary(): Fatal error: packet size %d is too large for SRTP\n", fOutBuf->curPacketSize());
+	  Log.Error(__FILE__, __LINE__, "MultiFramedRTPSink::sendPacketIfNecessary(): Fatal error: packet size %d is too large for SRTP\n", fOutBuf->curPacketSize());
 	  exit(1);
 	}
 	u_int8_t packet[MAX_UDP_PACKET_SIZE];

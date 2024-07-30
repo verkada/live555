@@ -20,6 +20,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // suitable for HLS (Apple's "HTTP Live Streaming").
 // Implementation
 
+#include <Log.hh>
 #include "HLSSegmenter.hh"
 #include "OutputFile.hh"
 #include "MPEG2TransportStreamMultiplexor.hh"
@@ -86,7 +87,7 @@ void HLSSegmenter::afterGettingFrame(void* clientData, unsigned frameSize,
 
 void HLSSegmenter::afterGettingFrame(unsigned frameSize, unsigned numTruncatedBytes) {
   if (numTruncatedBytes > 0) { // Shouldn't happen
-    fprintf(stderr, "HLSSegmenter::afterGettingFrame(frameSize %d, numTruncatedBytes %d)\n", frameSize, numTruncatedBytes);
+    Log.Error(__FILE__, __LINE__, "HLSSegmenter::afterGettingFrame(frameSize %d, numTruncatedBytes %d)\n", frameSize, numTruncatedBytes);
   }
 
   // Write the data to our output segment file:

@@ -18,12 +18,13 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A filter that breaks up a H.264 or H.265 Video Elementary Stream into NAL units.
 // Implementation
 
+#include <Log.hh>
 #include "H264or5VideoStreamFramer.hh"
 #include "MPEGVideoStreamParser.hh"
 #include "BitVector.hh"
 #include <GroupsockHelper.hh> // for "gettimeofday()"
 
-#include <Log.hh>
+
 
 ////////// H264or5VideoStreamParser definition //////////
 
@@ -343,7 +344,7 @@ char const* nal_unit_type_description_h265[64] = {
 #ifdef DEBUG
 static unsigned numDebugTabs = 1;
 #define DEBUG_PRINT(x) do { Log.Trace(__FILE__, __LINE__, "%s: %d", #x, x); } while (0)
-#define DEBUG_STR(x) do { fprintf(stderr, "%s\n", x); } while (0)
+#define DEBUG_STR(x) do { Log.Error(__FILE__, __LINE__, "%s\n", x); } while (0)
 class DebugTab {
 public:
   DebugTab() {++numDebugTabs;}

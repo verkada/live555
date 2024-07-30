@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // MP3 internal implementation details
 // Implementation
 
+#include <Log.hh>
 #include "MP3InternalsHuffman.hh"
 
 #include <stdlib.h>
@@ -188,7 +189,7 @@ void MP3FrameParams::setParamsFromHeader() {
 
   if (((hdr>>10)&0x3) == 0x3) {
 #ifdef DEBUG_ERRORS
-    fprintf(stderr,"Stream error - hdr: 0x%08x\n", hdr);
+    Log.Error(__FILE__, __LINE__,"Stream error - hdr: 0x%08x\n", hdr);
 #endif
   }
 
@@ -275,7 +276,7 @@ static unsigned updateSideInfoSizes(MP3SideInfo& sideInfo, Boolean isMPEG2,
   /* ASSERT: (p23L0Trunc <= p23L0) && (p23l1Trunc <= p23L1) */
   p23L0 -= p23L0Trunc; p23L1 -= p23L1Trunc;
 #ifdef DEBUG
-  fprintf(stderr, "updateSideInfoSizes (allowed: %d): %d->%d, %d->%d\n", allowedNumBits, p23L0+p23L0Trunc, p23L0, p23L1+p23L1Trunc, p23L1);
+  Log.Error(__FILE__, __LINE__, "updateSideInfoSizes (allowed: %d): %d->%d, %d->%d\n", allowedNumBits, p23L0+p23L0Trunc, p23L0, p23L1+p23L1Trunc, p23L1);
 #endif
 
   // The truncations computed above are still estimates.  We need to
@@ -337,7 +338,7 @@ Boolean GetADUInfoFromMP3Frame(unsigned char const* framePtr,
   numBits += sideInfo.ch[1].gr[1].part2_3_length;
   aduSize = (numBits+7)/8;
 #ifdef DEBUG
-  fprintf(stderr, "mp3GetADUInfoFromFrame: hdr: %08x, frameSize: %d, part2_3_lengths: %d,%d,%d,%d, aduSize: %d, backpointer: %d\n", hdr, frameSize, sideInfo.ch[0].gr[0].part2_3_length, sideInfo.ch[0].gr[1].part2_3_length, sideInfo.ch[1].gr[0].part2_3_length, sideInfo.ch[1].gr[1].part2_3_length, aduSize, backpointer);
+  Log.Error(__FILE__, __LINE__, "mp3GetADUInfoFromFrame: hdr: %08x, frameSize: %d, part2_3_lengths: %d,%d,%d,%d, aduSize: %d, backpointer: %d\n", hdr, frameSize, sideInfo.ch[0].gr[0].part2_3_length, sideInfo.ch[0].gr[1].part2_3_length, sideInfo.ch[1].gr[0].part2_3_length, sideInfo.ch[1].gr[1].part2_3_length, aduSize, backpointer);
 #endif
 
   return True;
@@ -400,7 +401,7 @@ static void getSideInfo1(MP3FrameParams& fr, MP3SideInfo& si,
 
 #ifdef DEBUG_ERRORS
          if (gr_info.block_type == 0) {
-           fprintf(stderr,"Blocktype == 0 and window-switching == 1 not allowed.\n");
+           Log.Error(__FILE__, __LINE__,"Blocktype == 0 and window-switching == 1 not allowed.\n");
          }
 #endif
          /* region_count/start parameters are implicit in this case. */
@@ -479,7 +480,7 @@ static void getSideInfo2(MP3FrameParams& fr, MP3SideInfo& si,
 
 #ifdef DEBUG_ERRORS
          if (gr_info.block_type == 0) {
-           fprintf(stderr,"Blocktype == 0 and window-switching == 1 not allowed.\n");
+           Log.Error(__FILE__, __LINE__,"Blocktype == 0 and window-switching == 1 not allowed.\n");
          }
 #endif
          /* region_count/start parameters are implicit in this case. */
@@ -758,7 +759,7 @@ unsigned TranscodeMP3ADU(unsigned char const* fromPtr, unsigned fromSize,
 			  part23Length1a, part23Length1aTruncation,
 			  part23Length1b, part23Length1bTruncation);
 #ifdef DEBUG
-fprintf(stderr, "shrinkage %d->%d [(%d,%d),(%d,%d)] (trunc: [(%d,%d),(%d,%d)]) {%d}\n", inAduSize, (numAduBits+7)/8,
+Log.Error(__FILE__, __LINE__, "shrinkage %d->%d [(%d,%d),(%d,%d)] (trunc: [(%d,%d),(%d,%d)]) {%d}\n", inAduSize, (numAduBits+7)/8,
 	      part23Length0a, part23Length0b, part23Length1a, part23Length1b,
 	      part23Length0aTruncation, part23Length0bTruncation,
 	      part23Length1aTruncation, part23Length1bTruncation,

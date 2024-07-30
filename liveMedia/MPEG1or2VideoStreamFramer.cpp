@@ -19,6 +19,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 //   frames for: Video_Sequence_Header, GOP_Header, Picture_Header
 // Implementation
 
+#include <Log.hh>
 #include "MPEG1or2VideoStreamFramer.hh"
 #include "MPEGVideoStreamParser.hh"
 #include <string.h>
@@ -180,7 +181,7 @@ unsigned MPEG1or2VideoStreamParser::parse() {
     }
   } catch (int /*e*/) {
 #ifdef DEBUG
-    fprintf(stderr, "MPEG1or2VideoStreamParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
+    Log.Error(__FILE__, __LINE__, "MPEG1or2VideoStreamParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
 #endif
     return 0;  // the parsing got interrupted
   }
@@ -211,7 +212,7 @@ unsigned MPEG1or2VideoStreamParser::useSavedVSH() {
   fSavedVSHTimestamp = usingSource()->getCurrentPTS();
 
 #ifdef DEBUG
-  fprintf(stderr, "used saved video_sequence_header (%d bytes)\n", bytesToUse);
+  Log.Error(__FILE__, __LINE__, "used saved video_sequence_header (%d bytes)\n", bytesToUse);
 #endif
   return bytesToUse;
 }
@@ -243,13 +244,13 @@ static double const frameRateFromCode[] = {
 unsigned MPEG1or2VideoStreamParser
 ::parseVideoSequenceHeader(Boolean haveSeenStartCode) {
 #ifdef DEBUG
-  fprintf(stderr, "parsing video sequence header\n");
+  Log.Error(__FILE__, __LINE__, "parsing video sequence header\n");
 #endif
   unsigned first4Bytes;
   if (!haveSeenStartCode) {
     while ((first4Bytes = test4Bytes()) != VIDEO_SEQUENCE_HEADER_START_CODE) {
 #ifdef DEBUG
-      fprintf(stderr, "ignoring non video sequence header: 0x%08x\n", first4Bytes);
+      Log.Error(__FILE__, __LINE__, "ignoring non video sequence header: 0x%08x\n", first4Bytes);
 #endif
       get1Byte(); setParseState(PARSING_VIDEO_SEQUENCE_HEADER);
           // ensures we progress over bad data
@@ -275,7 +276,7 @@ unsigned MPEG1or2VideoStreamParser
 #ifdef DEBUG
   unsigned bit_rate_value                = (next4Bytes&0xFFFFC000)>>(32-18);
   unsigned vbv_buffer_size_value         = (next4Bytes&0x00001FF8)>>3;
-  fprintf(stderr, "horizontal_size_value: %d, vertical_size_value: %d, aspect_ratio_information: %d, frame_rate_code: %d (=>%f fps), bit_rate_value: %d (=>%d bps), vbv_buffer_size_value: %d\n", horizontal_size_value, vertical_size_value, aspect_ratio_information, frame_rate_code, usingSource()->fFrameRate, bit_rate_value, bit_rate_value*400, vbv_buffer_size_value);
+  Log.Error(__FILE__, __LINE__, "horizontal_size_value: %d, vertical_size_value: %d, aspect_ratio_information: %d, frame_rate_code: %d (=>%f fps), bit_rate_value: %d (=>%d bps), vbv_buffer_size_value: %d\n", horizontal_size_value, vertical_size_value, aspect_ratio_information, frame_rate_code, usingSource()->fFrameRate, bit_rate_value, bit_rate_value*400, vbv_buffer_size_value);
 #endif
 
   // Now, copy all bytes that we see, up until we reach a GROUP_START_CODE
@@ -304,13 +305,13 @@ unsigned MPEG1or2VideoStreamParser::parseGOPHeader(Boolean haveSeenStartCode) {
   if (needToUseSavedVSH()) return useSavedVSH();
 
 #ifdef DEBUG
-  fprintf(stderr, "parsing GOP header\n");
+  Log.Error(__FILE__, __LINE__, "parsing GOP header\n");
 #endif
   unsigned first4Bytes;
   if (!haveSeenStartCode) {
     while ((first4Bytes = test4Bytes()) != GROUP_START_CODE) {
 #ifdef DEBUG
-      fprintf(stderr, "ignoring non GOP start code: 0x%08x\n", first4Bytes);
+      Log.Error(__FILE__, __LINE__, "ignoring non GOP start code: 0x%08x\n", first4Bytes);
 #endif
       get1Byte(); setParseState(PARSING_GOP_HEADER);
           // ensures we progress over bad data
@@ -333,12 +334,12 @@ unsigned MPEG1or2VideoStreamParser::parseGOPHeader(Boolean haveSeenStartCode) {
   unsigned time_code_seconds  = (time_code&0x00000FC0)>>6;
   unsigned time_code_pictures = (time_code&0x0000003F);
 #if defined(DEBUG) || defined(DEBUG_TIMESTAMPS)
-  fprintf(stderr, "time_code: 0x%07x, drop_frame %d, hours %d, minutes %d, seconds %d, pictures %d\n", time_code, drop_frame_flag, time_code_hours, time_code_minutes, time_code_seconds, time_code_pictures);
+  Log.Error(__FILE__, __LINE__, "time_code: 0x%07x, drop_frame %d, hours %d, minutes %d, seconds %d, pictures %d\n", time_code, drop_frame_flag, time_code_hours, time_code_minutes, time_code_seconds, time_code_pictures);
 #endif
 #ifdef DEBUG
   Boolean closed_gop  = (next4Bytes&0x00000040) != 0;
   Boolean broken_link = (next4Bytes&0x00000020) != 0;
-  fprintf(stderr, "closed_gop: %d, broken_link: %d\n", closed_gop, broken_link);
+  Log.Error(__FILE__, __LINE__, "closed_gop: %d, broken_link: %d\n", closed_gop, broken_link);
 #endif
 
   // Now, copy all bytes that we see, up until we reach a PICTURE_START_CODE:
@@ -370,7 +371,7 @@ inline Boolean isSliceStartCode(unsigned fourBytes) {
 
 unsigned MPEG1or2VideoStreamParser::parsePictureHeader() {
 #ifdef DEBUG
-  fprintf(stderr, "parsing picture header\n");
+  Log.Error(__FILE__, __LINE__, "parsing picture header\n");
 #endif
   // Note that we've already read the PICTURE_START_CODE
   // Next, extract the temporal reference from the next 4 bytes:
@@ -379,7 +380,7 @@ unsigned MPEG1or2VideoStreamParser::parsePictureHeader() {
   unsigned char picture_coding_type = (next4Bytes&0x00380000)>>19;
 #ifdef DEBUG
   unsigned short vbv_delay          = (next4Bytes&0x0007FFF8)>>3;
-  fprintf(stderr, "temporal_reference: %d, picture_coding_type: %d, vbv_delay: %d\n", temporal_reference, picture_coding_type, vbv_delay);
+  Log.Error(__FILE__, __LINE__, "temporal_reference: %d, picture_coding_type: %d, vbv_delay: %d\n", temporal_reference, picture_coding_type, vbv_delay);
 #endif
 
   fSkippingCurrentPicture = fIFramesOnly && picture_coding_type != 1;
@@ -419,7 +420,7 @@ unsigned MPEG1or2VideoStreamParser::parseSlice() {
   // Note that we've already read the slice_start_code:
   unsigned next4Bytes = PICTURE_START_CODE|fCurrentSliceNumber;
 #ifdef DEBUG_SLICE
-  fprintf(stderr, "parsing slice: 0x%08x\n", next4Bytes);
+  Log.Error(__FILE__, __LINE__, "parsing slice: 0x%08x\n", next4Bytes);
 #endif
 
   if (fSkippingCurrentPicture) {

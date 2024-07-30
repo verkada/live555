@@ -17,6 +17,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Basic Hash Table implementation
 // Implementation
 
+#include <Log.hh>
 #include "BasicHashTable.hh"
 #include "strDup.hh"
 
@@ -198,9 +199,9 @@ void BasicHashTable::deleteEntry(unsigned index, TableEntry* entry) {
 
   if (!foundIt) { // shouldn't happen
 #ifdef DEBUG
-    fprintf(stderr, "BasicHashTable[%p]::deleteEntry(%d,%p): internal error - not found (first entry %p", this, index, entry, fBuckets[index]);
-    if (fBuckets[index] != NULL) fprintf(stderr, ", next entry %p", fBuckets[index]->fNext);
-    fprintf(stderr, ")\n");
+    Log.Error(__FILE__, __LINE__, "BasicHashTable[%p]::deleteEntry(%d,%p): internal error - not found (first entry %p", this, index, entry, fBuckets[index]);
+    if (fBuckets[index] != NULL) Log.Error(__FILE__, __LINE__, ", next entry %p", fBuckets[index]->fNext);
+    Log.Error(__FILE__, __LINE__, ")\n");
 #endif
   }
 

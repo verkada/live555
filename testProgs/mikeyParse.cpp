@@ -1,5 +1,6 @@
 // Parses MIKEY data (from Base64)
 
+#include <Log.hh>
 #include <stdio.h>
 #include <stdlib.h>
 #include <Base64.hh>
@@ -24,7 +25,7 @@ static u_int8_t getByte(u_int8_t const*& ptr) {
 }
 
 Boolean parseMikeyUnknown(u_int8_t const*& /*ptr*/, u_int8_t const* /*endPtr*/, u_int8_t& /*nextPayloadType*/) {
-  fprintf(stderr, "\tUnknown or unhandled payload type\n");
+  Log.Error(__FILE__, __LINE__, "\tUnknown or unhandled payload type\n");
   return False;
 }
 
@@ -35,36 +36,36 @@ char const* dataTypeComment[256];
 Boolean parseMikeyHDR(u_int8_t const*& ptr, u_int8_t const* endPtr, u_int8_t& nextPayloadType) {
   testSize(10); // up to the start of "CS ID map info"
 
-  fprintf(stderr, "\tversion: %d\n", getByte(ptr));
+  Log.Error(__FILE__, __LINE__, "\tversion: %d\n", getByte(ptr));
 
   u_int8_t const dataType = getByte(ptr);
-  fprintf(stderr, "\tdata type: %d (%s)\n", dataType, dataTypeComment[dataType]);
+  Log.Error(__FILE__, __LINE__, "\tdata type: %d (%s)\n", dataType, dataTypeComment[dataType]);
 
   nextPayloadType = getByte(ptr);
-  fprintf(stderr, "\tnext payload: %d (%s)\n", nextPayloadType, payloadTypeName[nextPayloadType]);
+  Log.Error(__FILE__, __LINE__, "\tnext payload: %d (%s)\n", nextPayloadType, payloadTypeName[nextPayloadType]);
 
   u_int8_t const V_PRF = getByte(ptr);
   u_int8_t const PRF = V_PRF&0x7F;
-  fprintf(stderr, "\tV:%d; PRF:%d (%s)\n", V_PRF>>7, PRF, PRF == 0 ? "MIKEY-1" : "unknown");
+  Log.Error(__FILE__, __LINE__, "\tV:%d; PRF:%d (%s)\n", V_PRF>>7, PRF, PRF == 0 ? "MIKEY-1" : "unknown");
 
-  fprintf(stderr, "\tCSB ID:0x%08x\n", get4Bytes(ptr));
+  Log.Error(__FILE__, __LINE__, "\tCSB ID:0x%08x\n", get4Bytes(ptr));
 
   u_int8_t numCryptoSessions = getByte(ptr);
-  fprintf(stderr, "\t#CS:%d\n", numCryptoSessions);
+  Log.Error(__FILE__, __LINE__, "\t#CS:%d\n", numCryptoSessions);
 
   u_int8_t const CS_ID_map_type = getByte(ptr);
-  fprintf(stderr, "\tCS ID map type:%d (%s)\n",
+  Log.Error(__FILE__, __LINE__, "\tCS ID map type:%d (%s)\n",
 	  CS_ID_map_type, CS_ID_map_type == 0 ? "SRTP-ID" : "unknown");
   if (CS_ID_map_type != 0) return False;
 
-  fprintf(stderr, "\tCS ID map info:\n");
+  Log.Error(__FILE__, __LINE__, "\tCS ID map info:\n");
   testSize(numCryptoSessions * (1+4+4)); // the size of the "CS ID map info"
   for (u_int8_t i = 1; i <= numCryptoSessions; ++i) {
     u_int8_t policy_no = getByte(ptr);
     u_int32_t ssrc = get4Bytes(ptr);
     u_int32_t roc = get4Bytes(ptr);
     
-    fprintf(stderr, "\tPolicy_no_%d: %d;\tSSRC_%d: 0x%08x; ROC_%d: 0x%08x\n",
+    Log.Error(__FILE__, __LINE__, "\tPolicy_no_%d: %d;\tSSRC_%d: 0x%08x; ROC_%d: 0x%08x\n",
 	    i, policy_no,
 	    i, ssrc,
 	    i, roc);
@@ -74,72 +75,72 @@ Boolean parseMikeyHDR(u_int8_t const*& ptr, u_int8_t const* endPtr, u_int8_t& ne
 }
 
 static Boolean parseKeyDataSubPayload(u_int8_t const*& ptr, u_int8_t const* endPtr, u_int8_t& nextPayloadType) {
-  fprintf(stderr, "\tEncr data:\n");
+  Log.Error(__FILE__, __LINE__, "\tEncr data:\n");
   testSize(4); // up to the start of "Key data"
 
   nextPayloadType = getByte(ptr);
-  fprintf(stderr, "\t\tnext payload: %d (%s)\n", nextPayloadType, payloadTypeName[nextPayloadType]);
+  Log.Error(__FILE__, __LINE__, "\t\tnext payload: %d (%s)\n", nextPayloadType, payloadTypeName[nextPayloadType]);
 
   u_int8_t Type_KV = getByte(ptr);
   u_int8_t Type = Type_KV>>4;
   u_int8_t KV = Type_KV&0x0F;
-  fprintf(stderr, "\t\tType: %d (%s)\n", Type,
+  Log.Error(__FILE__, __LINE__, "\t\tType: %d (%s)\n", Type,
 	  Type == 0 ? "TGK" : Type == 1 ? "TGK+SALT" : Type == 2 ? "TEK" : Type == 3 ? "TEK+SALT" : "unknown");
   if (Type > 3) return False;
   Boolean hasSalt = Type == 1 || Type == 3;
   
-  fprintf(stderr, "\t\tKey Validity: %d (%s)\n", KV,
+  Log.Error(__FILE__, __LINE__, "\t\tKey Validity: %d (%s)\n", KV,
 	  KV == 0 ? "NULL" : KV == 1 ? "SPI/MKI" : KV == 2 ? "Interval" : "unknown");
   Boolean hasKV = KV != 0;
 
   u_int16_t keyDataLen = get2Bytes(ptr);
-  fprintf(stderr, "\t\tKey data len: %d\n", keyDataLen);
+  Log.Error(__FILE__, __LINE__, "\t\tKey data len: %d\n", keyDataLen);
   
   testSize(keyDataLen);
-  fprintf(stderr, "\t\tKey data: ");
-  for (unsigned i = 0; i < keyDataLen; ++i) fprintf(stderr, ":%02x", getByte(ptr));
-  fprintf(stderr, "\n");
+  Log.Error(__FILE__, __LINE__, "\t\tKey data: ");
+  for (unsigned i = 0; i < keyDataLen; ++i) Log.Error(__FILE__, __LINE__, ":%02x", getByte(ptr));
+  Log.Error(__FILE__, __LINE__, "\n");
   
   if (hasSalt) {
     testSize(2);
     u_int16_t saltLen = get2Bytes(ptr);
-    fprintf(stderr, "\t\tSalt len: %d\n", saltLen);
+    Log.Error(__FILE__, __LINE__, "\t\tSalt len: %d\n", saltLen);
 
     testSize(saltLen);
-    fprintf(stderr, "\t\tSalt data: ");
-    for (unsigned i = 0; i < saltLen; ++i) fprintf(stderr, ":%02x", getByte(ptr));
-    fprintf(stderr, "\n");
+    Log.Error(__FILE__, __LINE__, "\t\tSalt data: ");
+    for (unsigned i = 0; i < saltLen; ++i) Log.Error(__FILE__, __LINE__, ":%02x", getByte(ptr));
+    Log.Error(__FILE__, __LINE__, "\n");
   }
 
   if (hasKV) {
-    fprintf(stderr, "\t\tKV (key validity) data:\n");
+    Log.Error(__FILE__, __LINE__, "\t\tKV (key validity) data:\n");
     if (KV == 1) { // SPI/MKI
       testSize(1);
       u_int8_t SPILength = getByte(ptr);
-      fprintf(stderr, "\t\t\tSPI Length: %d\n", SPILength);
+      Log.Error(__FILE__, __LINE__, "\t\t\tSPI Length: %d\n", SPILength);
 
       testSize(SPILength);
-      fprintf(stderr, "\t\t\tSPI: ");
-      for (unsigned i = 0; i < SPILength; ++i) fprintf(stderr, ":%02x", getByte(ptr));
-      fprintf(stderr, "\n");
+      Log.Error(__FILE__, __LINE__, "\t\t\tSPI: ");
+      for (unsigned i = 0; i < SPILength; ++i) Log.Error(__FILE__, __LINE__, ":%02x", getByte(ptr));
+      Log.Error(__FILE__, __LINE__, "\n");
     } else if (KV == 2) { // Interval
       testSize(1);
       u_int8_t VFLength = getByte(ptr);
-      fprintf(stderr, "\t\t\tVF Length: %d\n", VFLength);
+      Log.Error(__FILE__, __LINE__, "\t\t\tVF Length: %d\n", VFLength);
 
       testSize(VFLength);
-      fprintf(stderr, "\t\t\tVF: ");
-      for (unsigned i = 0; i < VFLength; ++i) fprintf(stderr, ":%02x", getByte(ptr));
-      fprintf(stderr, "\n");
+      Log.Error(__FILE__, __LINE__, "\t\t\tVF: ");
+      for (unsigned i = 0; i < VFLength; ++i) Log.Error(__FILE__, __LINE__, ":%02x", getByte(ptr));
+      Log.Error(__FILE__, __LINE__, "\n");
 
       testSize(1);
       u_int8_t VTLength = getByte(ptr);
-      fprintf(stderr, "\t\t\tVT Length: %d\n", VTLength);
+      Log.Error(__FILE__, __LINE__, "\t\t\tVT Length: %d\n", VTLength);
 
       testSize(VTLength);
-      fprintf(stderr, "\t\t\tVT: ");
-      for (unsigned i = 0; i < VTLength; ++i) fprintf(stderr, ":%02x", getByte(ptr));
-      fprintf(stderr, "\n");
+      Log.Error(__FILE__, __LINE__, "\t\t\tVT: ");
+      for (unsigned i = 0; i < VTLength; ++i) Log.Error(__FILE__, __LINE__, ":%02x", getByte(ptr));
+      Log.Error(__FILE__, __LINE__, "\n");
     }
   }
     
@@ -150,14 +151,14 @@ Boolean parseMikeyKEMAC(u_int8_t const*& ptr, u_int8_t const* endPtr, u_int8_t& 
   testSize(4); // up to the start of "Encr data"
 
   nextPayloadType = getByte(ptr);
-  fprintf(stderr, "\tnext payload: %d (%s)\n", nextPayloadType, payloadTypeName[nextPayloadType]);
+  Log.Error(__FILE__, __LINE__, "\tnext payload: %d (%s)\n", nextPayloadType, payloadTypeName[nextPayloadType]);
 
   u_int8_t encrAlg = getByte(ptr);
-  fprintf(stderr, "\tEncr alg: %d (%s)\n", encrAlg,
+  Log.Error(__FILE__, __LINE__, "\tEncr alg: %d (%s)\n", encrAlg,
 	  encrAlg == 0 ? "NULL" : encrAlg == 1 ? "AES-CM-128" : encrAlg == 2 ? "AES-KW-128" : "unknown");
 
   u_int16_t encrDataLen = get2Bytes(ptr);
-  fprintf(stderr, "\tencr data len: %d\n", encrDataLen);
+  Log.Error(__FILE__, __LINE__, "\tencr data len: %d\n", encrDataLen);
 
   testSize(encrDataLen + 1/*allow for "Mac alg"*/);
   u_int8_t const* endOfKeyData = ptr + encrDataLen;
@@ -168,14 +169,14 @@ Boolean parseMikeyKEMAC(u_int8_t const*& ptr, u_int8_t const* endPtr, u_int8_t& 
   }
 
   u_int8_t macAlg = getByte(ptr);
-  fprintf(stderr, "\tMAC alg: %d (%s)\n", macAlg,
+  Log.Error(__FILE__, __LINE__, "\tMAC alg: %d (%s)\n", macAlg,
 	  macAlg == 0 ? "NULL" : macAlg == 1 ? "HMAC-SHA-1-160" : "unknown");
   if (macAlg > 1) return False;
   if (macAlg == 1) { // HMAC-SHA-1-160
     unsigned const macLen = 160/8; // bytes
-    fprintf(stderr, "\t\tMAC: ");
-    for (unsigned i = 0; i < macLen; ++i) fprintf(stderr, ":%02x", getByte(ptr));
-    fprintf(stderr, "\n");
+    Log.Error(__FILE__, __LINE__, "\t\tMAC: ");
+    for (unsigned i = 0; i < macLen; ++i) Log.Error(__FILE__, __LINE__, ":%02x", getByte(ptr));
+    Log.Error(__FILE__, __LINE__, "\n");
   }
 
   return True;
@@ -185,37 +186,37 @@ Boolean parseMikeyT(u_int8_t const*& ptr, u_int8_t const* endPtr, u_int8_t& next
   testSize(2); // up to the start of "TS value"
 
   nextPayloadType = getByte(ptr);
-  fprintf(stderr, "\tnext payload: %d (%s)\n", nextPayloadType, payloadTypeName[nextPayloadType]);
+  Log.Error(__FILE__, __LINE__, "\tnext payload: %d (%s)\n", nextPayloadType, payloadTypeName[nextPayloadType]);
 
   u_int8_t TS_type = getByte(ptr);
   unsigned TS_value_len;
-  fprintf(stderr, "\tTS type: %d (", TS_type);
+  Log.Error(__FILE__, __LINE__, "\tTS type: %d (", TS_type);
   switch (TS_type) {
     case 0: {
-      fprintf(stderr, "NTP-UTC)\n");
+      Log.Error(__FILE__, __LINE__, "NTP-UTC)\n");
       TS_value_len = 8; // 64 bits
       break;
     }
     case 1: {
-      fprintf(stderr, "NTP)\n");
+      Log.Error(__FILE__, __LINE__, "NTP)\n");
       TS_value_len = 8; // 64 bits
       break;
     }
     case 2: {
-      fprintf(stderr, "COUNTER)\n");
+      Log.Error(__FILE__, __LINE__, "COUNTER)\n");
       TS_value_len = 4; // 32 bits
       break;
     }
     default: {
-      fprintf(stderr, "unknown)\n");
+      Log.Error(__FILE__, __LINE__, "unknown)\n");
       return False;
     }
   }
 
   testSize(TS_value_len);
-  fprintf(stderr, "\tTS value:");
-  for (unsigned i = 0; i < TS_value_len; ++i) fprintf(stderr, ":%02x", getByte(ptr));
-  fprintf(stderr, "\n");
+  Log.Error(__FILE__, __LINE__, "\tTS value:");
+  for (unsigned i = 0; i < TS_value_len; ++i) Log.Error(__FILE__, __LINE__, ":%02x", getByte(ptr));
+  Log.Error(__FILE__, __LINE__, "\n");
 
   return True;
 }
@@ -238,49 +239,49 @@ static char const* SRTPPolicyParamTypeExplanation[] = {
 };
 
 static Boolean parseSRTPPolicyParam(u_int8_t const*& ptr, u_int8_t const* endPtr) {
-  fprintf(stderr, "\tPolicy param:\n");
+  Log.Error(__FILE__, __LINE__, "\tPolicy param:\n");
   while (ptr < endPtr) {
     testSize(2);
 
     u_int8_t ppType = getByte(ptr);
-    fprintf(stderr, "\t\ttype: %d (%s); ", ppType,
+    Log.Error(__FILE__, __LINE__, "\t\ttype: %d (%s); ", ppType,
 	    ppType > MAX_SRTP_POLICY_PARAM_TYPE ? "unknown" : SRTPPolicyParamTypeExplanation[ppType]);
 
     u_int8_t ppLen = getByte(ptr);
-    fprintf(stderr, "length: %d; value: ", ppLen);
+    Log.Error(__FILE__, __LINE__, "length: %d; value: ", ppLen);
 
     testSize(ppLen);
     u_int8_t ppVal = 0xFF;
     if (ppLen == 1) {
       ppVal = getByte(ptr);
-      fprintf(stderr, "%d", ppVal);
+      Log.Error(__FILE__, __LINE__, "%d", ppVal);
     } else {
-      for (unsigned j = 0; j < ppLen; ++j) fprintf(stderr, ":%02x", getByte(ptr));
+      for (unsigned j = 0; j < ppLen; ++j) Log.Error(__FILE__, __LINE__, ":%02x", getByte(ptr));
     }
 
     switch (ppType) {
       case 0: { // Encryption algorithm
-	fprintf(stderr, " (%s)",
+	Log.Error(__FILE__, __LINE__, " (%s)",
 		ppVal == 0 ? "NULL" : ppVal == 1 ? "AES-CM" : ppVal == 2 ? "AES-F8" : "unknown");
         break;
       }
       case 2: { // Authentication algorithm
-	fprintf(stderr, " (%s)",
+	Log.Error(__FILE__, __LINE__, " (%s)",
 		ppVal == 0 ? "NULL" : ppVal == 1 ? "HMAC-SHA-1" : "unknown");
         break;
       }
       case 5: { // SRTP Pseudo Random Function
-	fprintf(stderr, " (%s)",
+	Log.Error(__FILE__, __LINE__, " (%s)",
 		ppVal == 0 ? "AES-CM" : "unknown");
         break;
       }
       case 9: { // sender's FEC order
-	fprintf(stderr, " (%s)",
+	Log.Error(__FILE__, __LINE__, " (%s)",
 		ppVal == 0 ? "First FEC, then SRTP" : "unknown");
         break;
       }
     }
-    fprintf(stderr, "\n");
+    Log.Error(__FILE__, __LINE__, "\n");
   }
 
   return True;
@@ -290,16 +291,16 @@ Boolean parseMikeySP(u_int8_t const*& ptr, u_int8_t const* endPtr, u_int8_t& nex
   testSize(2); // up to the start of "Policy param"
 
   nextPayloadType = getByte(ptr);
-  fprintf(stderr, "\tnext payload: %d (%s)\n", nextPayloadType, payloadTypeName[nextPayloadType]);
+  Log.Error(__FILE__, __LINE__, "\tnext payload: %d (%s)\n", nextPayloadType, payloadTypeName[nextPayloadType]);
 
-  fprintf(stderr, "\tPolicy number: %d\n", getByte(ptr));
+  Log.Error(__FILE__, __LINE__, "\tPolicy number: %d\n", getByte(ptr));
 
   u_int8_t protocolType = getByte(ptr);
-  fprintf(stderr, "\tProtocol type: %d (%s)\n", protocolType, protocolType == 0 ? "SRTP" : "unknown");
+  Log.Error(__FILE__, __LINE__, "\tProtocol type: %d (%s)\n", protocolType, protocolType == 0 ? "SRTP" : "unknown");
   if (protocolType != 0) return False;
 
   u_int16_t policyParam_len = get2Bytes(ptr);
-  fprintf(stderr, "\tPolicy param len: %d\n", policyParam_len);
+  Log.Error(__FILE__, __LINE__, "\tPolicy param len: %d\n", policyParam_len);
 
   testSize(policyParam_len);
   return parseSRTPPolicyParam(ptr, ptr + policyParam_len);
@@ -309,15 +310,15 @@ Boolean parseMikeyRAND(u_int8_t const*& ptr, u_int8_t const* endPtr, u_int8_t& n
   testSize(2); // up to the start of "RAND"
 
   nextPayloadType = getByte(ptr);
-  fprintf(stderr, "\tnext payload: %d (%s)\n", nextPayloadType, payloadTypeName[nextPayloadType]);
+  Log.Error(__FILE__, __LINE__, "\tnext payload: %d (%s)\n", nextPayloadType, payloadTypeName[nextPayloadType]);
 
   u_int8_t RAND_len = getByte(ptr);
-  fprintf(stderr, "\tRAND len: %d", RAND_len);
+  Log.Error(__FILE__, __LINE__, "\tRAND len: %d", RAND_len);
 
   testSize(RAND_len);
-  fprintf(stderr, "\tRAND:");
-  for (unsigned i = 0; i < RAND_len; ++i) fprintf(stderr, ":%02x", getByte(ptr));
-  fprintf(stderr, "\n");
+  Log.Error(__FILE__, __LINE__, "\tRAND:");
+  for (unsigned i = 0; i < RAND_len; ++i) Log.Error(__FILE__, __LINE__, ":%02x", getByte(ptr));
+  Log.Error(__FILE__, __LINE__, "\n");
 
   return True;
 }
@@ -328,7 +329,7 @@ parseMikeyPayloadFunc* payloadParser[256];
 
 int main(int argc, char** argv) {
   if (argc != 2) {
-    fprintf(stderr, "Usage: %s <base64Data>\n", argv[0]);
+    Log.Error(__FILE__, __LINE__, "Usage: %s <base64Data>\n", argv[0]);
     exit(1);
   }
   char const* base64Data = argv[1];
@@ -336,9 +337,9 @@ int main(int argc, char** argv) {
   unsigned mikeyDataSize;
   u_int8_t* mikeyData = base64Decode(base64Data, mikeyDataSize);
 
-  fprintf(stderr, "Base64Data \"%s\" produces %d bytes of MIKEY data:\n", base64Data, mikeyDataSize);
-  for (unsigned i = 0; i < mikeyDataSize; ++i) fprintf(stderr, ":%02x", mikeyData[i]);
-  fprintf(stderr, "\n");
+  Log.Error(__FILE__, __LINE__, "Base64Data \"%s\" produces %d bytes of MIKEY data:\n", base64Data, mikeyDataSize);
+  for (unsigned i = 0; i < mikeyDataSize; ++i) Log.Error(__FILE__, __LINE__, ":%02x", mikeyData[i]);
+  Log.Error(__FILE__, __LINE__, "\n");
 
   for (unsigned i = 0; i < 256; ++i) {
     payloadTypeName[i] = "unknown or unhandled";
@@ -397,20 +398,20 @@ int main(int argc, char** argv) {
 
   do {
     // Begin by parsing an initial "HDR":
-    fprintf(stderr, "HDR:\n");
+    Log.Error(__FILE__, __LINE__, "HDR:\n");
     if (!parseMikeyHDR(ptr, endPtr, nextPayloadType)) break;
   
     // Then parse each successive payload:
     while (nextPayloadType != 0 /* Last payload */) {
-      fprintf(stderr, "%s:\n", payloadTypeName[nextPayloadType]);
+      Log.Error(__FILE__, __LINE__, "%s:\n", payloadTypeName[nextPayloadType]);
       if (!(*payloadParser[nextPayloadType])(ptr, endPtr, nextPayloadType)) break;
     }
   } while (0);
 
   if (ptr < endPtr) {
-    fprintf(stderr, "+%ld bytes of unparsed data: ", endPtr-ptr);
-    while (ptr < endPtr) fprintf(stderr, ":%02x", *ptr++);
-    fprintf(stderr, "\n");
+    Log.Error(__FILE__, __LINE__, "+%ld bytes of unparsed data: ", endPtr-ptr);
+    while (ptr < endPtr) Log.Error(__FILE__, __LINE__, ":%02x", *ptr++);
+    Log.Error(__FILE__, __LINE__, "\n");
   }
 
   delete[] mikeyData;

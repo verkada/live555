@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // HLS (HTTP Live Streaming) segments, plus a ".m3u8" file that can be accessed via a web browser.
 // main program
 
+#include <Log.hh>
 #include "liveMedia.hh"
 #include "BasicUsageEnvironment.hh"
 
@@ -435,7 +436,7 @@ void segmentationCallback(void* /*clientData*/,
   tail = newSegment;
   totalDuration += segmentDuration;
 
-  fprintf(stderr, "Wrote segment \"%s\" (duration: %f seconds) -> %f seconds of data stored\n",
+  Log.Error(__FILE__, __LINE__, "Wrote segment \"%s\" (duration: %f seconds) -> %f seconds of data stored\n",
 	  segmentFileName, segmentDuration, totalDuration);
   
   static unsigned firstSegmentCounter = 1;
@@ -451,7 +452,7 @@ void segmentationCallback(void* /*clientData*/,
     segmentToRemove->next() = NULL;
 
     totalDuration -= segmentToRemove->duration();
-    fprintf(stderr, "\tDeleting segment \"%s\" (duration: %f seconds) -> %f seconds of data stored\n",
+    Log.Error(__FILE__, __LINE__, "\tDeleting segment \"%s\" (duration: %f seconds) -> %f seconds of data stored\n",
 	    segmentToRemove->fileName(), segmentToRemove->duration(), totalDuration);
     if (unlink(segmentToRemove->fileName()) != 0) {
       *env << "\t\tunlink(\"" << segmentToRemove->fileName() << "\") failed: " << env->getResultMsg() << "\n";
@@ -497,7 +498,7 @@ void segmentationCallback(void* /*clientData*/,
 
   static Boolean isFirstTime = True;
   if (isFirstTime) {
-    fprintf(stderr, "Wrote index file \"%s\"; the stream can now be played from a URL pointing to this file.\007\n", ourM3U8FileName);
+    Log.Error(__FILE__, __LINE__, "Wrote index file \"%s\"; the stream can now be played from a URL pointing to this file.\007\n", ourM3U8FileName);
     isFirstTime = False;
   }
 }

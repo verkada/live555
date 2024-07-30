@@ -17,6 +17,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Basic Usage Environment: for a simple, non-scripted, console application
 // Implementation
 
+#include <Log.hh>
 #include "BasicUsageEnvironment.hh"
 #include <stdio.h>
 
@@ -60,26 +61,26 @@ int BasicUsageEnvironment::getErrno() const {
 
 UsageEnvironment& BasicUsageEnvironment::operator<<(char const* str) {
   if (str == NULL) str = "(NULL)"; // sanity check
-  fprintf(stderr, "%s", str);
+  Log.Error(__FILE__, __LINE__, "%s", str);
   return *this;
 }
 
 UsageEnvironment& BasicUsageEnvironment::operator<<(int i) {
-  fprintf(stderr, "%d", i);
+  Log.Error(__FILE__, __LINE__, "%d", i);
   return *this;
 }
 
 UsageEnvironment& BasicUsageEnvironment::operator<<(unsigned u) {
-  fprintf(stderr, "%u", u);
+  Log.Error(__FILE__, __LINE__, "%u", u);
   return *this;
 }
 
 UsageEnvironment& BasicUsageEnvironment::operator<<(double d) {
-  fprintf(stderr, "%f", d);
+  Log.Error(__FILE__, __LINE__, "%f", d);
   return *this;
 }
 
 UsageEnvironment& BasicUsageEnvironment::operator<<(void* p) {
-  fprintf(stderr, "%p", p);
+  Log.Error(__FILE__, __LINE__, "%p", p);
   return *this;
 }

@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A source object for AAC audio files in ADTS format
 // Implementation
 
+#include <Log.hh>
 #include "ADTSAudioFileSource.hh"
 #include "InputFile.hh"
 #include <GroupsockHelper.hh>
@@ -75,7 +76,7 @@ ADTSAudioFileSource::createNew(UsageEnvironment& env, char const* fileName) {
     SeekFile64(fid, SEEK_SET,0);
 #endif
 #ifdef DEBUG
-    fprintf(stderr, "Read first frame: profile %d, "
+    Log.Error(__FILE__, __LINE__, "Read first frame: profile %d, "
 	    "sampling_frequency_index %d => samplingFrequency %d, "
 	    "channel_configuration %d\n",
 	    profile,
@@ -130,8 +131,8 @@ void ADTSAudioFileSource::doGetNextFrame() {
     = ((headers[3]&0x03)<<11) | (headers[4]<<3) | ((headers[5]&0xE0)>>5);
 #ifdef DEBUG
   u_int16_t syncword = (headers[0]<<4) | (headers[1]>>4);
-  fprintf(stderr, "Read frame: syncword 0x%x, protection_absent %d, frame_length %d\n", syncword, protection_absent, frame_length);
-  if (syncword != 0xFFF) fprintf(stderr, "WARNING: Bad syncword!\n");
+  Log.Error(__FILE__, __LINE__, "Read frame: syncword 0x%x, protection_absent %d, frame_length %d\n", syncword, protection_absent, frame_length);
+  if (syncword != 0xFFF) Log.Error(__FILE__, __LINE__, "WARNING: Bad syncword!\n");
 #endif
   unsigned numBytesToRead
     = frame_length > sizeof headers ? frame_length - sizeof headers : 0;

@@ -16,13 +16,14 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Copyright (c) 1996-2024, Live Networks, Inc.  All rights reserved
 // A program that prints out this computer's audio input ports
 
+#include <Log.hh>
 #include "AudioInputDevice.hh"
 #include <stdio.h>
 
 int main(int argc, char** argv) {
 	AudioPortNames* portNames = AudioInputDevice::getPortNames();
 	if (portNames == NULL) {
-		fprintf(stderr, "AudioInputDevice::getPortNames() failed!\n");
+		Log.Error(__FILE__, __LINE__, "AudioInputDevice::getPortNames() failed!\n");
 		exit(1);
 	}
 

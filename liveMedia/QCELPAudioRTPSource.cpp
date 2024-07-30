@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Qualcomm "PureVoice" (aka. "QCELP") Audio RTP Sources
 // Implementation
 
+#include <Log.hh>
 #include "QCELPAudioRTPSource.hh"
 #include "MultiFramedRTPSource.hh"
 #include "FramedFilter.hh"
@@ -183,7 +184,7 @@ Boolean RawQCELPRTPSource
   unsigned char const interleaveL = (firstByte&0x38)>>3;
   unsigned char const interleaveN = firstByte&0x07;
 #ifdef DEBUG
-  fprintf(stderr, "packetSize: %d, interleaveL: %d, interleaveN: %d\n", packetSize, interleaveL, interleaveN);
+  Log.Error(__FILE__, __LINE__, "packetSize: %d, interleaveL: %d, interleaveN: %d\n", packetSize, interleaveL, interleaveN);
 #endif
   if (interleaveL > 5 || interleaveN > interleaveL) return False; //invalid
 
@@ -238,7 +239,7 @@ unsigned QCELPBufferedPacket::
   }
 
 #ifdef DEBUG
-  fprintf(stderr, "QCELPBufferedPacket::nextEnclosedFrameSize(): frameSize: %d, dataSize: %d\n", frameSize, dataSize);
+  Log.Error(__FILE__, __LINE__, "QCELPBufferedPacket::nextEnclosedFrameSize(): frameSize: %d, dataSize: %d\n", frameSize, dataSize);
 #endif
   if (dataSize < frameSize) return 0;
 
@@ -406,7 +407,7 @@ void QCELPDeinterleavingBuffer
       || interleaveL > QCELP_MAX_INTERLEAVE_L || interleaveN > interleaveL
       || frameIndex == 0 || frameIndex > QCELP_MAX_FRAMES_PER_PACKET) {
 #ifdef DEBUG
-    fprintf(stderr, "QCELPDeinterleavingBuffer::deliverIncomingFrame() param sanity check failed (%d,%d,%d,%d)\n", frameSize, interleaveL, interleaveN, frameIndex);
+    Log.Error(__FILE__, __LINE__, "QCELPDeinterleavingBuffer::deliverIncomingFrame() param sanity check failed (%d,%d,%d,%d)\n", frameSize, interleaveL, interleaveN, frameIndex);
 #endif
     return;
   }

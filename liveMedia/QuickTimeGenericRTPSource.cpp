@@ -19,6 +19,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 //     <http://developer.apple.com/quicktime/icefloe/dispatch026.html>
 // Implementation
 
+#include <Log.hh>
 #include "QuickTimeGenericRTPSource.hh"
 
 ///// QTGenericBufferedPacket and QTGenericBufferedPacketFactory /////
@@ -105,7 +106,7 @@ Boolean QuickTimeGenericRTPSource
   headerStart += 4;
 
 #ifdef DEBUG
-  fprintf(stderr, "PCK: %d, S: %d, Q: %d, L: %d, D: %d, payloadId: %d\n", qtState.PCK, S, Q, L, D, payloadId);
+  Log.Error(__FILE__, __LINE__, "PCK: %d, S: %d, Q: %d, L: %d, D: %d, payloadId: %d\n", qtState.PCK, S, Q, L, D, payloadId);
 #endif
 
   if (Q) { // A "QuickTime Payload Description" follows
@@ -122,7 +123,7 @@ Boolean QuickTimeGenericRTPSource
     headerStart += 4;
 
 #ifdef DEBUG
-    fprintf(stderr, "\tK: %d, F: %d, A: %d, Z: %d, payloadDescriptionLength: %d\n", K, F, A, Z, payloadDescriptionLength);
+    Log.Error(__FILE__, __LINE__, "\tK: %d, F: %d, A: %d, Z: %d, payloadDescriptionLength: %d\n", K, F, A, Z, payloadDescriptionLength);
 #endif
     // Make sure "payloadDescriptionLength" is valid
     if (payloadDescriptionLength < 12) return False;
@@ -143,7 +144,7 @@ Boolean QuickTimeGenericRTPSource
 
     payloadDescriptionLength -= 12;
 #ifdef DEBUG
-    fprintf(stderr, "\tmediaType: '%c%c%c%c', timescale: %d, %d bytes of TLVs left\n", mediaType>>24, (mediaType&0xFF0000)>>16, (mediaType&0xFF00)>>8, mediaType&0xFF, qtState.timescale, payloadDescriptionLength);
+    Log.Error(__FILE__, __LINE__, "\tmediaType: '%c%c%c%c', timescale: %d, %d bytes of TLVs left\n", mediaType>>24, (mediaType&0xFF0000)>>16, (mediaType&0xFF00)>>8, mediaType&0xFF, qtState.timescale, payloadDescriptionLength);
 #endif
 
     while (payloadDescriptionLength > 3) {
@@ -153,8 +154,8 @@ Boolean QuickTimeGenericRTPSource
       if (tlvLength > payloadDescriptionLength) return False; // bad TLV
       headerStart += 4;
 #ifdef DEBUG
-      fprintf(stderr, "\t\tTLV '%c%c', length %d, leaving %d remaining bytes\n", tlvType>>8, tlvType&0xFF, tlvLength, payloadDescriptionLength - tlvLength);
-      for (int i = 0; i < tlvLength; ++i) fprintf(stderr, "%02x:", headerStart[i]); fprintf(stderr, "\n");
+      Log.Error(__FILE__, __LINE__, "\t\tTLV '%c%c', length %d, leaving %d remaining bytes\n", tlvType>>8, tlvType&0xFF, tlvLength, payloadDescriptionLength - tlvLength);
+      for (int i = 0; i < tlvLength; ++i) Log.Error(__FILE__, __LINE__, "%02x:", headerStart[i]); Log.Error(__FILE__, __LINE__, "\n");
 #endif
 
       // Check for 'TLV's that we can use for our 'qtState'
@@ -195,7 +196,7 @@ Boolean QuickTimeGenericRTPSource
     headerStart += 4;
 
 #ifdef DEBUG
-    fprintf(stderr, "\tssInfoLength: %d\n", ssInfoLength);
+    Log.Error(__FILE__, __LINE__, "\tssInfoLength: %d\n", ssInfoLength);
 #endif
     // Make sure "ssInfoLength" is valid
     if (ssInfoLength < 4) return False;
@@ -215,8 +216,8 @@ Boolean QuickTimeGenericRTPSource
       ssInfoLength -= 4;
       if (tlvLength > ssInfoLength) return False; // bad TLV
 #ifdef DEBUG
-      fprintf(stderr, "\t\tTLV '%c%c', length %d, leaving %d remaining bytes\n", tlvType>>8, tlvType&0xFF, tlvLength, ssInfoLength - tlvLength);
-      for (int i = 0; i < tlvLength; ++i) fprintf(stderr, "%02x:", headerStart[4+i]); fprintf(stderr, "\n");
+      Log.Error(__FILE__, __LINE__, "\t\tTLV '%c%c', length %d, leaving %d remaining bytes\n", tlvType>>8, tlvType&0xFF, tlvLength, ssInfoLength - tlvLength);
+      for (int i = 0; i < tlvLength; ++i) Log.Error(__FILE__, __LINE__, "%02x:", headerStart[4+i]); Log.Error(__FILE__, __LINE__, "\n");
 #endif
       ssInfoLength -= tlvLength;
       headerStart += 4 + tlvLength;
@@ -231,7 +232,7 @@ Boolean QuickTimeGenericRTPSource
 
   resultSpecialHeaderSize = expectedHeaderSize;
 #ifdef DEBUG
-  fprintf(stderr, "Result special header size: %d\n", resultSpecialHeaderSize);
+  Log.Error(__FILE__, __LINE__, "Result special header size: %d\n", resultSpecialHeaderSize);
 #endif
   return True;
 }

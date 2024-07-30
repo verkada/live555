@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A server demultiplexor for a Matroska file
 // Implementation
 
+#include <Log.hh>
 #include "MatroskaFileServerDemux.hh"
 #include "MP3AudioMatroskaFileServerMediaSubsession.hh"
 #include "MatroskaFileServerMediaSubsession.hh"
@@ -67,7 +68,7 @@ ServerMediaSubsession* MatroskaFileServerDemux
 
   if (result != NULL) {
 #ifdef DEBUG
-    fprintf(stderr, "Created 'ServerMediaSubsession' object for track #%d: %s (%s)\n", track->trackNumber, track->codecID, track->mimeType);
+    Log.Error(__FILE__, __LINE__, "Created 'ServerMediaSubsession' object for track #%d: %s (%s)\n", track->trackNumber, track->codecID, track->mimeType);
 #endif
   }
 

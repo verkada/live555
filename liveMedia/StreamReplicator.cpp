@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // An class that can be used to create (possibly multiple) 'replicas' of an incoming stream.
 // Implementation.
 
+#include <Log.hh>
 #include "StreamReplicator.hh"
 
 ////////// Definition of "StreamReplica": The class that implements each stream replica //////////
@@ -106,7 +107,7 @@ void StreamReplicator::deactivateStreamReplica(StreamReplica* replicaBeingDeacti
   if (replicaBeingDeactivated->fFrameIndex == -1) return; // this replica has already been deactivated (or was never activated at all)
 
   // Assert: fNumActiveReplicas > 0
-  if (fNumActiveReplicas == 0) fprintf(stderr, "StreamReplicator::deactivateStreamReplica() Internal Error!\n"); // should not happen
+  if (fNumActiveReplicas == 0) Log.Error(__FILE__, __LINE__, "StreamReplicator::deactivateStreamReplica() Internal Error!\n"); // should not happen
   --fNumActiveReplicas;
 
   // Forget about any frame delivery that might have just been made to this replica:
@@ -195,7 +196,7 @@ void StreamReplicator::removeStreamReplica(StreamReplica* replicaBeingRemoved) {
   deactivateStreamReplica(replicaBeingRemoved);
 
   // Assert: fNumReplicas > 0
-  if (fNumReplicas == 0) fprintf(stderr, "StreamReplicator::removeStreamReplica() Internal Error!\n"); // should not happen
+  if (fNumReplicas == 0) Log.Error(__FILE__, __LINE__, "StreamReplicator::removeStreamReplica() Internal Error!\n"); // should not happen
   --fNumReplicas;
 
   // If this was the last replica, then delete ourselves (if we were set up to do so):
@@ -257,13 +258,13 @@ void StreamReplicator::deliverReceivedFrame() {
     replica->fNext = NULL;
     
     // Assert: fPrimaryReplica != NULL
-    if (fPrimaryReplica == NULL) fprintf(stderr, "StreamReplicator::deliverReceivedFrame() Internal Error 1!\n"); // shouldn't happen
+    if (fPrimaryReplica == NULL) Log.Error(__FILE__, __LINE__, "StreamReplicator::deliverReceivedFrame() Internal Error 1!\n"); // shouldn't happen
     StreamReplica::copyReceivedFrame(replica, fPrimaryReplica);
     replica->fFrameIndex = 1 - replica->fFrameIndex; // toggle it (0<->1), because this replica no longer awaits the current frame
     ++fNumDeliveriesMadeSoFar;
 
     // Assert: fNumDeliveriesMadeSoFar < fNumActiveReplicas; // because we still have the 'primary replica' to deliver to
-    if (!(fNumDeliveriesMadeSoFar < fNumActiveReplicas)) fprintf(stderr, "StreamReplicator::deliverReceivedFrame() Internal Error 2(%d,%d)!\n", fNumDeliveriesMadeSoFar, fNumActiveReplicas); // should not happen
+    if (!(fNumDeliveriesMadeSoFar < fNumActiveReplicas)) Log.Error(__FILE__, __LINE__, "StreamReplicator::deliverReceivedFrame() Internal Error 2(%d,%d)!\n", fNumDeliveriesMadeSoFar, fNumActiveReplicas); // should not happen
 
     // Complete delivery to this replica:
     FramedSource::afterGetting(replica);
@@ -290,7 +291,7 @@ void StreamReplicator::deliverReceivedFrame() {
 
     // Move any other replicas that had already requested the next frame to the 'requesting current frame' list:
     // Assert: fReplicasAwaitingCurrentFrame == NULL;
-    if (!(fReplicasAwaitingCurrentFrame == NULL)) fprintf(stderr, "StreamReplicator::deliverReceivedFrame() Internal Error 3!\n"); // should not happen
+    if (!(fReplicasAwaitingCurrentFrame == NULL)) Log.Error(__FILE__, __LINE__, "StreamReplicator::deliverReceivedFrame() Internal Error 3!\n"); // should not happen
     fReplicasAwaitingCurrentFrame = fReplicasAwaitingNextFrame;
     fReplicasAwaitingNextFrame = NULL;
     

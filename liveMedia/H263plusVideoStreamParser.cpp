@@ -19,6 +19,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A filter that breaks up an H.263plus video stream into frames.
 // Based on MPEG4IP/mp4creator/h263.c
 
+#include <Log.hh>
 #include "H263plusVideoStreamParser.hh"
 #include "H263plusVideoStreamFramer.hh"
 //#include <string.h>
@@ -113,7 +114,7 @@ unsigned H263plusVideoStreamParser::parse(u_int64_t & currentDuration)
          // Parse the returned frame header (if any)
          if (!ParseShortHeader(fTo, &fNextInfo)) {
 #ifdef DEBUG
-	   fprintf(stderr,"H263plusVideoStreamParser: Fatal error\n");
+	   Log.Error(__FILE__, __LINE__,"H263plusVideoStreamParser: Fatal error\n");
 #endif
 	 }
 
@@ -134,7 +135,7 @@ unsigned H263plusVideoStreamParser::parse(u_int64_t & currentDuration)
       }
    } catch (int /*e*/) {
 #ifdef DEBUG
-      fprintf(stderr, "H263plusVideoStreamParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
+      Log.Error(__FILE__, __LINE__, "H263plusVideoStreamParser::parse() EXCEPTION (This is normal behavior - *not* an error)\n");
 #endif
       frameSize=0;
    }
@@ -197,7 +198,7 @@ int H263plusVideoStreamParser::parseH263Frame( )
             ((row = fStates[(unsigned char)row][*(bufferIndex++)]) != -1)); // Start code was not found
 
    if (row != -1) {
-      fprintf(stderr, "%s: Buffer too small (%u)\n",
+      Log.Error(__FILE__, __LINE__, "%s: Buffer too small (%u)\n",
          "h263reader:", bufferEnd - fTo + ADDITIONAL_BYTES_NEEDED);
       return 0;
    }
@@ -399,6 +400,7 @@ u_int8_t H263plusVideoStreamParser::GetTRDifference(
 ////////////////////////////////////////////////////////////////////////////////
 // this is the h263.c file of MPEG4IP mp4creator
 /*
+#include <Log.hh>
 #include "mp4creator.h"
 
 // Default timescale for H.263 (1000ms)
@@ -584,7 +586,7 @@ MP4TrackId H263Creator(MP4FileHandle outputFileHandle,
   }
 
   // If we got to here... something went wrong ...
-  fprintf(stderr,
+  Log.Error(__FILE__, __LINE__,
     "%s: Could not parse input file, invalid video stream?\n", ProgName);
   // Upon failure, delete the newly added track if it has been added
   if (trackId != MP4_INVALID_TRACK_ID) {
@@ -661,7 +663,7 @@ static int LoadNextH263Object(  FILE           *inputFileHandle,
   } while ((frameBuffer < bufferEnd) &&                    // We have place in the buffer
            ((row = states[row][*(frameBuffer++)]) != -1)); // Start code was not found
   if (row != -1) {
-    fprintf(stderr, "%s: Buffer too small (%u)\n",
+    Log.Error(__FILE__, __LINE__, "%s: Buffer too small (%u)\n",
             ProgName, bufferEnd - bufferStart + additionalBytesNeeded);
     return 0;
   }
@@ -673,7 +675,7 @@ static int LoadNextH263Object(  FILE           *inputFileHandle,
   // Now we just have to read the additionalBytesNeeded
   if(fread(frameBuffer, additionalBytesNeeded, 1, inputFileHandle) != 1) {
     /// We got a start code but can't read additionalBytesNeeded ... that's a fatal error
-    fprintf(stderr, "%s: Invalid H263 bitstream\n", ProgName);
+    Log.Error(__FILE__, __LINE__, "%s: Invalid H263 bitstream\n", ProgName);
     return 0;
   }
 

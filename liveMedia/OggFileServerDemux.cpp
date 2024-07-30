@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A server demultiplexor for a Ogg file
 // Implementation
 
+#include <Log.hh>
 #include "OggFileServerDemux.hh"
 #include "OggFileServerMediaSubsession.hh"
 
@@ -51,7 +52,7 @@ ServerMediaSubsession* OggFileServerDemux
   ServerMediaSubsession* result = OggFileServerMediaSubsession::createNew(*this, track);
   if (result != NULL) {
 #ifdef DEBUG
-    fprintf(stderr, "Created 'ServerMediaSubsession' object for track #%d: (%s)\n", track->trackNumber, track->mimeType);
+    Log.Error(__FILE__, __LINE__, "Created 'ServerMediaSubsession' object for track #%d: (%s)\n", track->trackNumber, track->mimeType);
 #endif
   }
 

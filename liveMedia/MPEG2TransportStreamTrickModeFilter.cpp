@@ -21,6 +21,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // the video stream.
 // Implementation
 
+#include <Log.hh>
 #include "MPEG2TransportStreamTrickModeFilter.hh"
 #include <ByteStreamFileSource.hh>
 
@@ -68,7 +69,7 @@ Boolean MPEG2TransportStreamTrickModeFilter::seekTo(unsigned long tsPacketNumber
 #define isNonIFrameStart(type) ((type) == 0x83 || (type) == 0x88/*for H.264*/ || (type) == 0x8E/*for H.265*/)
 
 void MPEG2TransportStreamTrickModeFilter::doGetNextFrame() {
-  //  fprintf(stderr, "#####DGNF1\n");
+  //  Log.Error(__FILE__, __LINE__, "#####DGNF1\n");
   // If our client's buffer size is too small, then deliver
   // a 0-byte 'frame', to tell it to process all of the data that it has
   // already read, before asking for more data from us:
@@ -102,7 +103,7 @@ void MPEG2TransportStreamTrickModeFilter::doGetNextFrame() {
       fFirstPCR = recordPCR;
       fHaveStarted = True;
     }
-    //    fprintf(stderr, "#####read index record %ld: ts %ld: %c, PCR %f\n", fNextIndexRecordNum, fDesiredTSPacketNum, isIFrameStart(recordType) ? 'I' : isNonIFrameStart(recordType) ? 'j' : 'x', recordPCR);
+    //    Log.Error(__FILE__, __LINE__, "#####read index record %ld: ts %ld: %c, PCR %f\n", fNextIndexRecordNum, fDesiredTSPacketNum, isIFrameStart(recordType) ? 'I' : isNonIFrameStart(recordType) ? 'j' : 'x', recordPCR);
     fNextIndexRecordNum
       += (fState == DELIVERING_SAVED_FRAME) ? 1 : fDirection;
 
@@ -110,19 +111,19 @@ void MPEG2TransportStreamTrickModeFilter::doGetNextFrame() {
     switch (fState) {
     case SKIPPING_FRAME:
     case SAVING_AND_DELIVERING_FRAME: {
-      //      if (fState == SKIPPING_FRAME) fprintf(stderr, "\tSKIPPING_FRAME\n"); else fprintf(stderr, "\tSAVING_AND_DELIVERING_FRAME\n");//#####
+      //      if (fState == SKIPPING_FRAME) Log.Error(__FILE__, __LINE__, "\tSKIPPING_FRAME\n"); else Log.Error(__FILE__, __LINE__, "\tSAVING_AND_DELIVERING_FRAME\n");//#####
       if (isIFrameStart(recordType)) {
 	// Save a record of this frame:
 	fSavedFrameIndexRecordStart = fNextIndexRecordNum - fDirection;
 	fUseSavedFrameNextTime = True;
-	//	fprintf(stderr, "\trecording\n");//#####
+	//	Log.Error(__FILE__, __LINE__, "\trecording\n");//#####
 	if ((fFrameCount++)%fScale == 0 && fUseSavedFrameNextTime) {
 	  // A frame is due now.
 	  fFrameCount = 1; // reset to avoid overflow
 	  if (fDirection > 0) {
 	    // Begin delivering this frame, as we're scanning it:
 	    fState = SAVING_AND_DELIVERING_FRAME;
-	    //	    fprintf(stderr, "\tdelivering\n");//#####
+	    //	    Log.Error(__FILE__, __LINE__, "\tdelivering\n");//#####
 	    fDesiredDataPCR = recordPCR; // use this frame's PCR
 	    attemptDeliveryToClient();
 	    return;
@@ -134,7 +135,7 @@ void MPEG2TransportStreamTrickModeFilter::doGetNextFrame() {
 	    fDesiredDataPCR = recordPCR;
 	    // use this frame's (not the saved frame's) PCR
 	    fNextIndexRecordNum = fSavedFrameIndexRecordStart;
-	    //	    fprintf(stderr, "\tbeginning delivery of saved frame\n");//#####
+	    //	    Log.Error(__FILE__, __LINE__, "\tbeginning delivery of saved frame\n");//#####
 	  }
 	} else {
 	  // No frame is needed now:
@@ -150,7 +151,7 @@ void MPEG2TransportStreamTrickModeFilter::doGetNextFrame() {
 	  fDesiredDataPCR = recordPCR;
 	  // use this frame's (not the saved frame's) PCR
 	  fNextIndexRecordNum = fSavedFrameIndexRecordStart;
-	  //	  fprintf(stderr, "\tbeginning delivery of saved frame\n");//#####
+	  //	  Log.Error(__FILE__, __LINE__, "\tbeginning delivery of saved frame\n");//#####
 	} else {
 	  // No frame is needed now:
 	  fState = SKIPPING_FRAME;
@@ -158,7 +159,7 @@ void MPEG2TransportStreamTrickModeFilter::doGetNextFrame() {
       } else {
 	// Not the start of a frame, but deliver it, if it's needed:
 	if (fState == SAVING_AND_DELIVERING_FRAME) {
-	  //	  fprintf(stderr, "\tdelivering\n");//#####
+	  //	  Log.Error(__FILE__, __LINE__, "\tdelivering\n");//#####
 	  fDesiredDataPCR = recordPCR; // use this frame's PCR
 	  attemptDeliveryToClient();
 	  return;
@@ -167,12 +168,12 @@ void MPEG2TransportStreamTrickModeFilter::doGetNextFrame() {
       break;
     }
     case DELIVERING_SAVED_FRAME: {
-      //      fprintf(stderr, "\tDELIVERING_SAVED_FRAME\n");//#####
+      //      Log.Error(__FILE__, __LINE__, "\tDELIVERING_SAVED_FRAME\n");//#####
       if (endOfIndexFile
 	  || (isIFrameStart(recordType)
 	      && fNextIndexRecordNum-1 != fSavedFrameIndexRecordStart)
 	  || isNonIFrameStart(recordType)) {
-	//	fprintf(stderr, "\tended delivery of saved frame\n");//#####
+	//	Log.Error(__FILE__, __LINE__, "\tended delivery of saved frame\n");//#####
 	// We've reached the end of the saved frame, so revert to the
 	// original sequence of index records:
 	fNextIndexRecordNum = fSavedSequentialIndexRecordNum;
@@ -180,7 +181,7 @@ void MPEG2TransportStreamTrickModeFilter::doGetNextFrame() {
 	fState = SKIPPING_FRAME;
       } else {
 	// Continue delivering:
-	//	fprintf(stderr, "\tdelivering\n");//#####
+	//	Log.Error(__FILE__, __LINE__, "\tdelivering\n");//#####
 	attemptDeliveryToClient();
 	return;
       }
@@ -197,7 +198,7 @@ void MPEG2TransportStreamTrickModeFilter::doStopGettingFrames() {
 
 void MPEG2TransportStreamTrickModeFilter::attemptDeliveryToClient() {
   if (fCurrentTSPacketNum == fDesiredTSPacketNum) {
-    //    fprintf(stderr, "\t\tdelivering ts %d:%d, %d bytes, PCR %f\n", fCurrentTSPacketNum, fDesiredDataOffset, fDesiredDataSize, fDesiredDataPCR);//#####
+    //    Log.Error(__FILE__, __LINE__, "\t\tdelivering ts %d:%d, %d bytes, PCR %f\n", fCurrentTSPacketNum, fDesiredDataOffset, fDesiredDataSize, fDesiredDataPCR);//#####
     // We already have the Transport Packet that we want.  Deliver its data:
     memmove(fTo, &fInputBuffer[fDesiredDataOffset], fDesiredDataSize);
     fFrameSize = fDesiredDataSize;
@@ -206,7 +207,7 @@ void MPEG2TransportStreamTrickModeFilter::attemptDeliveryToClient() {
     fPresentationTime.tv_sec = (unsigned long)deliveryPCR;
     fPresentationTime.tv_usec
       = (unsigned long)((deliveryPCR - fPresentationTime.tv_sec)*1000000.0f);
-    //    fprintf(stderr, "#####DGNF9\n");
+    //    Log.Error(__FILE__, __LINE__, "#####DGNF9\n");
 
     afterGetting(this);
   } else {

@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Implementation
 
 
+#include <Log.hh>
 #include "BasicUsageEnvironment.hh"
 #include "HandlerSet.hh"
 #include <stdio.h>
@@ -110,14 +111,14 @@ void BasicTaskScheduler::SingleStep(unsigned maxDelayTime) {
 	// Because this failure is often "Bad file descriptor" - which is caused by an invalid socket number (i.e., a socket number
 	// that had already been closed) being used in "select()" - we print out the sockets that were being used in "select()",
 	// to assist in debugging:
-	fprintf(stderr, "socket numbers used in the select() call:");
+	Log.Error(__FILE__, __LINE__, "socket numbers used in the select() call:");
 	for (int i = 0; i < 10000; ++i) {
 	  if (FD_ISSET(i, &fReadSet) || FD_ISSET(i, &fWriteSet) || FD_ISSET(i, &fExceptionSet)) {
-	    fprintf(stderr, " %d(", i);
-	    if (FD_ISSET(i, &fReadSet)) fprintf(stderr, "r");
-	    if (FD_ISSET(i, &fWriteSet)) fprintf(stderr, "w");
-	    if (FD_ISSET(i, &fExceptionSet)) fprintf(stderr, "e");
-	    fprintf(stderr, ")");
+	    Log.Error(__FILE__, __LINE__, " %d(", i);
+	    if (FD_ISSET(i, &fReadSet)) Log.Error(__FILE__, __LINE__, "r");
+	    if (FD_ISSET(i, &fWriteSet)) Log.Error(__FILE__, __LINE__, "w");
+	    if (FD_ISSET(i, &fExceptionSet)) Log.Error(__FILE__, __LINE__, "e");
+	    Log.Error(__FILE__, __LINE__, ")");
 	  }
 	}
 #endif
@@ -187,7 +188,7 @@ void BasicTaskScheduler::SingleStep(unsigned maxDelayTime) {
       if (mask == 0) mask = EVENT_TRIGGER_ID_HIGH_BIT;
 
 #ifndef NO_STD_LIB
-      if (fTriggersAwaitingHandling[i].test()) {
+      if (fTriggersAwaitingHandling[i].test_and_set()) {
 	fTriggersAwaitingHandling[i].clear();
 #else
       if (fTriggersAwaitingHandling[i]) {

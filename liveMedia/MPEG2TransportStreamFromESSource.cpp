@@ -19,6 +19,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // to a MPEG-2 Transport Stream
 // Implementation
 
+#include <Log.hh>
 #include "MPEG2TransportStreamFromESSource.hh"
 
 #define SIMPLE_PES_HEADER_SIZE 14
@@ -252,7 +253,7 @@ void InputESSourceRecord
       = presentationTime.tv_sec*90000 + (presentationTime.tv_usec*9)/100;
     fSCR.extension = (presentationTime.tv_usec*9)%100;
 #ifdef DEBUG_SCR
-    fprintf(stderr, "PES header: stream_id 0x%02x, pts: %u.%06u => SCR 0x%x%08x:%03x\n", fStreamId, (unsigned)presentationTime.tv_sec, (unsigned)presentationTime.tv_usec, fSCR.highBit, fSCR.remainingBits, fSCR.extension);
+    Log.Error(__FILE__, __LINE__, "PES header: stream_id 0x%02x, pts: %u.%06u => SCR 0x%x%08x:%03x\n", fStreamId, (unsigned)presentationTime.tv_sec, (unsigned)presentationTime.tv_usec, fSCR.highBit, fSCR.remainingBits, fSCR.extension);
 #endif
   }
 

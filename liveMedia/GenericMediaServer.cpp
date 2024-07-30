@@ -19,6 +19,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 //  "ServerMediaSession" objects to describe media to be served.
 // Implementation
 
+#include <Log.hh>
 #include "GenericMediaServer.hh"
 #include <GroupsockHelper.hh>
 #if defined(__WIN32__) || defined(_WIN32) || defined(_QNX4)
@@ -361,7 +362,7 @@ void GenericMediaServer::ClientSession::noteLiveness() {
 #ifdef DEBUG
   char const* streamName
     = (fOurServerMediaSession == NULL) ? "???" : fOurServerMediaSession->streamName();
-  fprintf(stderr, "Client session (id \"%08X\", stream name \"%s\"): Liveness indication\n",
+  Log.Error(__FILE__, __LINE__, "Client session (id \"%08X\", stream name \"%s\"): Liveness indication\n",
 	  fOurSessionId, streamName);
 #endif
   if (fOurServerMediaSession != NULL) fOurServerMediaSession->noteLiveness();
@@ -382,7 +383,7 @@ void GenericMediaServer::ClientSession::livenessTimeoutTask(ClientSession* clien
 #ifdef DEBUG
   char const* streamName
     = (clientSession->fOurServerMediaSession == NULL) ? "???" : clientSession->fOurServerMediaSession->streamName();
-  fprintf(stderr, "Client session (id \"%08X\", stream name \"%s\") has timed out (due to inactivity)\n",
+  Log.Error(__FILE__, __LINE__, "Client session (id \"%08X\", stream name \"%s\") has timed out (due to inactivity)\n",
 	  clientSession->fOurSessionId, streamName);
 #endif
   clientSession->fLivenessCheckTask = NULL;

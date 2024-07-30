@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A parser for a MPEG Transport Stream
 // Implementation
 
+#include <Log.hh>
 #include "MPEG2TransportStreamParser.hh"
 #include "FileSink.hh"
 #include <time.h> // for time_t
@@ -26,7 +27,7 @@ Boolean MPEG2TransportStreamParser
 ::processStreamPacket(PIDState_STREAM* pidState, Boolean pusi, unsigned numDataBytes) {
 #ifdef DEBUG_CONTENTS
   extern StreamType StreamTypes[];
-  fprintf(stderr, "\t%s stream (stream_type 0x%02x)\n",
+  Log.Error(__FILE__, __LINE__, "\t%s stream (stream_type 0x%02x)\n",
 	  StreamTypes[pidState->stream_type].description, pidState->stream_type);
 #endif
   do {
@@ -91,7 +92,7 @@ unsigned MPEG2TransportStreamParser
   }
 
 #ifdef DEBUG_CONTENTS
-  fprintf(stderr, "\t\tPES Header:\n");
+  Log.Error(__FILE__, __LINE__, "\t\tPES Header:\n");
 #endif
   unsigned startPos = curOffset();
 
@@ -99,7 +100,7 @@ unsigned MPEG2TransportStreamParser
     u_int32_t startCodePlusStreamId = get4Bytes();
     if ((startCodePlusStreamId&0xFFFFFF00) != 0x00000100) {
 #ifdef DEBUG_ERRORS
-      fprintf(stderr, "MPEG2TransportStreamParser::parsePESHeader(0x%02x, %d): Bad start code: 0x%06x\n",
+      Log.Error(__FILE__, __LINE__, "MPEG2TransportStreamParser::parsePESHeader(0x%02x, %d): Bad start code: 0x%06x\n",
 	      pidState->PID, numDataBytes, startCodePlusStreamId>>8);
 #endif
       break;
@@ -107,7 +108,7 @@ unsigned MPEG2TransportStreamParser
     u_int8_t stream_id = startCodePlusStreamId&0xFF;
 
 #ifdef DEBUG_CONTENTS
-    fprintf(stderr, "\t\t\tstream_id: 0x%02x; PES_packet_length: %d\n",
+    Log.Error(__FILE__, __LINE__, "\t\t\tstream_id: 0x%02x; PES_packet_length: %d\n",
 	    stream_id, get2Bytes());
 #else
     skipBytes(2);
@@ -117,7 +118,7 @@ unsigned MPEG2TransportStreamParser
       u_int16_t flags = get2Bytes();
       if ((flags&0xC000) != 0x8000) {
 #ifdef DEBUG_ERRORS
-	fprintf(stderr, "MPEG2TransportStreamParser::parsePESHeader(0x%02x, %d): Bad flags: 0x%04x\n",
+	Log.Error(__FILE__, __LINE__, "MPEG2TransportStreamParser::parsePESHeader(0x%02x, %d): Bad flags: 0x%04x\n",
 		pidState->PID, numDataBytes, flags);
 #endif
 	break;
@@ -130,13 +131,13 @@ unsigned MPEG2TransportStreamParser
       Boolean PES_CRC_flag = (flags&0x0002) != 0;
       Boolean PES_extension_flag = (flags&0x0001) != 0;
 #ifdef DEBUG_CONTENTS
-      fprintf(stderr, "\t\t\tflags: 0x%04x (PTS_DTS:%d; ESCR:%d; ES_rate:%d; DSM_trick_mode:%d; additional_copy_info:%d; PES_CRC:%d; PES_extension:%d)\n",
+      Log.Error(__FILE__, __LINE__, "\t\t\tflags: 0x%04x (PTS_DTS:%d; ESCR:%d; ES_rate:%d; DSM_trick_mode:%d; additional_copy_info:%d; PES_CRC:%d; PES_extension:%d)\n",
 	      flags, PTS_DTS_flags, ESCR_flag, ES_rate_flag, DSM_trick_mode_flag, additional_copy_info_flag, PES_CRC_flag, PES_extension_flag);
 #endif
 
       u_int8_t PES_header_data_length = get1Byte();
 #ifdef DEBUG_CONTENTS
-      fprintf(stderr, "\t\t\tPES_header_data_length: %d\n", PES_header_data_length);
+      Log.Error(__FILE__, __LINE__, "\t\t\tPES_header_data_length: %d\n", PES_header_data_length);
 #endif
 
       if (PTS_DTS_flags == 2 || PTS_DTS_flags == 3) {
@@ -146,7 +147,7 @@ unsigned MPEG2TransportStreamParser
 	if ((first8PTSBits&0xF1) != ((PTS_DTS_flags<<4)|0x01) ||
 	    (last32PTSBits&0x00010001) != 0x00010001) {
 #ifdef DEBUG_ERRORS
-	  fprintf(stderr, "MPEG2TransportStreamParser::parsePESHeader(0x%02x, %d): Bad PTS bits: 0x%02x,0x%08x\n",
+	  Log.Error(__FILE__, __LINE__, "MPEG2TransportStreamParser::parsePESHeader(0x%02x, %d): Bad PTS bits: 0x%02x,0x%08x\n",
 		  pidState->PID, numDataBytes, first8PTSBits, last32PTSBits);
 #endif
 	  break;
@@ -156,7 +157,7 @@ unsigned MPEG2TransportStreamParser
 	double PTS = ptsUpper32/45000.0;
 	if (ptsLowBit) PTS += 1/90000.0;
 #ifdef DEBUG_CONTENTS
-	fprintf(stderr, "\t\t\tPTS: 0x%02x%08x => 0x%08x+%d => %.10f\n",
+	Log.Error(__FILE__, __LINE__, "\t\t\tPTS: 0x%02x%08x => 0x%08x+%d => %.10f\n",
 		first8PTSBits, last32PTSBits, ptsUpper32, ptsLowBit, PTS);
 #endif
 	// Record this PTS:
@@ -170,7 +171,7 @@ unsigned MPEG2TransportStreamParser
 	if ((first8DTSBits&0x11) != 0x11 ||
 	    (last32DTSBits&0x00010001) != 0x00010001) {
 #ifdef DEBUG_ERRORS
-	  fprintf(stderr, "MPEG2TransportStreamParser::parsePESHeader(0x%02x, %d): Bad DTS bits: 0x%02x,0x%08x\n",
+	  Log.Error(__FILE__, __LINE__, "MPEG2TransportStreamParser::parsePESHeader(0x%02x, %d): Bad DTS bits: 0x%02x,0x%08x\n",
 		  pidState->PID, numDataBytes, first8DTSBits, last32DTSBits);
 #endif
 	  break;
@@ -180,7 +181,7 @@ unsigned MPEG2TransportStreamParser
 	double DTS = dtsUpper32/45000.0;
 	if (dtsLowBit) DTS += 1/90000.0;
 #ifdef DEBUG_CONTENTS
-	fprintf(stderr, "\t\t\tDTS: 0x%02x%08x => 0x%08x+%d => %.10f\n",
+	Log.Error(__FILE__, __LINE__, "\t\t\tDTS: 0x%02x%08x => 0x%08x+%d => %.10f\n",
 		first8DTSBits, last32DTSBits, dtsUpper32, dtsLowBit, DTS);
 #endif
       }
@@ -218,7 +219,7 @@ unsigned MPEG2TransportStreamParser
 	Boolean P_STD_buffer_flag = (flags&0x10) != 0;
 	Boolean PES_extension_flag_2 = (flags&0x01) != 0;
 #ifdef DEBUG_CONTENTS
-	fprintf(stderr, "\t\t\tPES_extension: flags: 0x%02x (PES_private_data:%d; pack_header_field:%d; program_packet_sequence_counter:%d; P_STD_buffer:%d; PES_extension_2:%d\n",
+	Log.Error(__FILE__, __LINE__, "\t\t\tPES_extension: flags: 0x%02x (PES_private_data:%d; pack_header_field:%d; program_packet_sequence_counter:%d; P_STD_buffer:%d; PES_extension_2:%d\n",
 		flags, PES_private_data_flag, pack_header_field_flag, program_packet_sequence_counter_flag, P_STD_buffer_flag, PES_extension_flag_2);
 #endif
 	if (PES_private_data_flag) {
@@ -240,7 +241,7 @@ unsigned MPEG2TransportStreamParser
 	if (PES_extension_flag_2) {
 	  u_int8_t PES_extension_field_length = get1Byte()&0x7F;
 #ifdef DEBUG_CONTENTS
-	  fprintf(stderr, "\t\t\t\tPES_extension_field_length: %d\n", PES_extension_field_length);
+	  Log.Error(__FILE__, __LINE__, "\t\t\t\tPES_extension_field_length: %d\n", PES_extension_field_length);
 #endif
 	  skipBytes(PES_extension_field_length);
 	}
@@ -250,7 +251,7 @@ unsigned MPEG2TransportStreamParser
       // (and skip over any remasining 'stuffing' bytes):
       if (curOffset() - startPos > 9 + PES_header_data_length) {
 #ifdef DEBUG_ERRORS
-	fprintf(stderr, "MPEG2TransportStreamParser::parsePESHeader(0x%02x, %d): Error: Parsed %d PES header bytes; expected %d (based on \"PES_header_data_length\": %d)\n",
+	Log.Error(__FILE__, __LINE__, "MPEG2TransportStreamParser::parsePESHeader(0x%02x, %d): Error: Parsed %d PES header bytes; expected %d (based on \"PES_header_data_length\": %d)\n",
 		pidState->PID, numDataBytes, curOffset() - startPos, 9 + PES_header_data_length,
 		PES_header_data_length);
 #endif
@@ -261,11 +262,11 @@ unsigned MPEG2TransportStreamParser
 
     unsigned PESHeaderSize = curOffset() - startPos;
 #ifdef DEBUG_CONTENTS
-    fprintf(stderr, "\t\t\t=> PES header size: %d\n", PESHeaderSize);
+    Log.Error(__FILE__, __LINE__, "\t\t\t=> PES header size: %d\n", PESHeaderSize);
 #endif
     if (PESHeaderSize > numDataBytes) {
 #ifdef DEBUG_ERRORS
-	fprintf(stderr, "MPEG2TransportStreamParser::parsePESHeader(0x%02x, %d): Error: PES header size %d is larger than the number of bytes available (%d)\n",
+	Log.Error(__FILE__, __LINE__, "MPEG2TransportStreamParser::parsePESHeader(0x%02x, %d): Error: PES header size %d is larger than the number of bytes available (%d)\n",
 		pidState->PID, numDataBytes, PESHeaderSize, numDataBytes);
 #endif
       break;
@@ -299,7 +300,7 @@ PIDState_STREAM::PIDState_STREAM(MPEG2TransportStreamParser& parser,
 	  st.dataType == StreamType::TEXT ? "TEXT" :
 	  "UNKNOWN",
 	  program_number, pid, st.filenameSuffix);
-  fprintf(stderr, "Creating new output file \"%s\"\n", fileName);
+  Log.Error(__FILE__, __LINE__, "Creating new output file \"%s\"\n", fileName);
   streamSink = FileSink::createNew(parser.envir(), fileName);
   streamSink->startPlaying(*streamSource, NULL, NULL);
 }

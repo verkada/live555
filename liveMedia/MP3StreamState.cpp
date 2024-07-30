@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A class encapsulating the state of a MP3 stream
 // Implementation
 
+#include <Log.hh>
 #include "MP3StreamState.hh"
 #include "InputFile.hh"
 #include "GroupsockHelper.hh"
@@ -148,7 +149,7 @@ Boolean MP3StreamState::readFrame(unsigned char* outBuf, unsigned outBufSize,
 
   if (outBufSize < resultFrameSize) {
 #ifdef DEBUG_ERRORS
-    fprintf(stderr, "Insufficient buffer size for reading input frame (%d, need %d)\n",
+    Log.Error(__FILE__, __LINE__, "Insufficient buffer size for reading input frame (%d, need %d)\n",
 	    outBufSize, resultFrameSize);
 #endif
     if (outBufSize < 4) outBufSize = 0;
@@ -206,13 +207,13 @@ Boolean MP3StreamState::findNextFrame() {
             | (unsigned long) hbuf[3];
 
 #ifdef DEBUG_PARSE
-  fprintf(stderr, "fr().hdr: 0x%08x\n", fr().hdr);
+  Log.Error(__FILE__, __LINE__, "fr().hdr: 0x%08x\n", fr().hdr);
 #endif
   if (fr().oldHdr != fr().hdr || !fr().oldHdr) {
     i = 0;
   init_resync:
 #ifdef DEBUG_PARSE
-    fprintf(stderr, "init_resync: fr().hdr: 0x%08x\n", fr().hdr);
+    Log.Error(__FILE__, __LINE__, "init_resync: fr().hdr: 0x%08x\n", fr().hdr);
 #endif
     if (   (fr().hdr & 0xffe00000) != 0xffe00000
 	|| (fr().hdr & 0x00060000) == 0 // undefined 'layer' field
@@ -229,7 +230,7 @@ Boolean MP3StreamState::findNextFrame() {
       if (fr().hdr == ('R'<<24)+('I'<<16)+('F'<<8)+'F') {
 	unsigned char buf[70 /*was: 40*/];
 #ifdef DEBUG_ERRORS
-	fprintf(stderr,"Skipped RIFF header\n");
+	Log.Error(__FILE__, __LINE__,"Skipped RIFF header\n");
 #endif
 	readFromStream(buf, 66); /* already read 4 */
 	goto read_again;
@@ -250,7 +251,7 @@ Boolean MP3StreamState::findNextFrame() {
 	  bytesToSkip -= bytesToRead;
 	}
 #ifdef DEBUG_ERRORS
-	fprintf(stderr,"Skipped %d-byte ID3 header\n", tagSize);
+	Log.Error(__FILE__, __LINE__,"Skipped %d-byte ID3 header\n", tagSize);
 #endif
 	goto read_again;
       }
@@ -264,17 +265,17 @@ Boolean MP3StreamState::findNextFrame() {
 	fr().hdr |= hbuf[3];
 	fr().hdr &= 0xffffffff;
 #ifdef DEBUG_PARSE
-	fprintf(stderr, "calling init_resync %d\n", i);
+	Log.Error(__FILE__, __LINE__, "calling init_resync %d\n", i);
 #endif
 	goto init_resync;
       }
 #ifdef DEBUG_ERRORS
-      fprintf(stderr,"Giving up searching valid MPEG header\n");
+      Log.Error(__FILE__, __LINE__,"Giving up searching valid MPEG header\n");
 #endif
       return False;
 
 #ifdef DEBUG_ERRORS
-      fprintf(stderr,"Illegal Audio-MPEG-Header 0x%08lx at offset 0x%lx.\n",
+      Log.Error(__FILE__, __LINE__,"Illegal Audio-MPEG-Header 0x%08lx at offset 0x%lx.\n",
 	      fr().hdr,tell_stream(str)-4);
 #endif
       /* Read more bytes until we find something that looks
@@ -312,7 +313,7 @@ Boolean MP3StreamState::findNextFrame() {
 
     if (fr().isFreeFormat) {
 #ifdef DEBUG_ERRORS
-      fprintf(stderr,"Free format not supported.\n");
+      Log.Error(__FILE__, __LINE__,"Free format not supported.\n");
 #endif
       return False;
     }
@@ -320,7 +321,7 @@ Boolean MP3StreamState::findNextFrame() {
 #ifdef MP3_ONLY
     if (fr().layer != 3) {
 #ifdef DEBUG_ERRORS
-      fprintf(stderr, "MPEG layer %d is not supported!\n", fr().layer);
+      Log.Error(__FILE__, __LINE__, "MPEG layer %d is not supported!\n", fr().layer);
 #endif
       return False;
     }

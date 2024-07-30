@@ -19,6 +19,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // The SRTP 'Cryptographic Context', used in all of our uses of SRTP.
 // Implementation
 
+#include <Log.hh>
 #include "SRTPCryptographicContext.hh"
 #ifndef NO_OPENSSL
 #include "HMAC_SHA1.hh"
@@ -51,7 +52,7 @@ Boolean SRTPCryptographicContext
   do {
     if (inPacketSize < 12) { // For SRTP, 12 is the minimum packet size (if unauthenticated)
 #ifdef DEBUG
-      fprintf(stderr, "SRTPCryptographicContext::processIncomingSRTPPacket(): Error: Packet size %d is too short for SRTP!\n", inPacketSize);
+      Log.Error(__FILE__, __LINE__, "SRTPCryptographicContext::processIncomingSRTPPacket(): Error: Packet size %d is too short for SRTP!\n", inPacketSize);
 #endif
       break;
     }
@@ -60,7 +61,7 @@ Boolean SRTPCryptographicContext
       = SRTP_MKI_LENGTH + (weAuthenticate() ? SRTP_AUTH_TAG_LENGTH : 0);
     if (inPacketSize <= numBytesPastEncryption) {
 #ifdef DEBUG
-      fprintf(stderr, "SRTPCryptographicContext::processIncomingSRTPPacket(): Error: Packet size %d is too short for encrpytion and/or authentication!\n", inPacketSize);
+      Log.Error(__FILE__, __LINE__, "SRTPCryptographicContext::processIncomingSRTPPacket(): Error: Packet size %d is too short for encrpytion and/or authentication!\n", inPacketSize);
 #endif
       break;
     }
@@ -113,7 +114,7 @@ Boolean SRTPCryptographicContext
 
       if (!verifySRTPAuthenticationTag(buffer, numBytesToAuthenticate, thisPacketsROC, authenticationTag)) {
 #ifdef DEBUG
-	fprintf(stderr, "SRTPCryptographicContext::processIncomingSRTPPacket(): Failed to authenticate incoming SRTP packet!\n");
+	Log.Error(__FILE__, __LINE__, "SRTPCryptographicContext::processIncomingSRTPPacket(): Failed to authenticate incoming SRTP packet!\n");
 #endif
 	break;
       }
@@ -135,7 +136,7 @@ Boolean SRTPCryptographicContext
 	// There's a RTP extension header.  Add its size:
 	if (inPacketSize < rtpHeaderSize + 4) {
 #ifdef DEBUG
-	  fprintf(stderr, "SRTPCryptographicContext::processIncomingSRTPPacket(): Error: Packet size %d is shorter than the minimum specified RTP header size %d!\n", inPacketSize, rtpHeaderSize + 4);
+	  Log.Error(__FILE__, __LINE__, "SRTPCryptographicContext::processIncomingSRTPPacket(): Error: Packet size %d is shorter than the minimum specified RTP header size %d!\n", inPacketSize, rtpHeaderSize + 4);
 #endif
 	  break;
 	}
@@ -147,7 +148,7 @@ Boolean SRTPCryptographicContext
       unsigned numEncryptedBytes = inPacketSize - numBytesPastEncryption; // ASSERT: > 0
       if (offsetToEncryptedBytes > numEncryptedBytes) {
 #ifdef DEBUG
-	fprintf(stderr, "SRTPCryptographicContext::processIncomingSRTPPacket(): Error: RTP header size %d (expected <= %d) is too large!\n", rtpHeaderSize, numEncryptedBytes);
+	Log.Error(__FILE__, __LINE__, "SRTPCryptographicContext::processIncomingSRTPPacket(): Error: RTP header size %d (expected <= %d) is too large!\n", rtpHeaderSize, numEncryptedBytes);
 #endif
 	break;
       }
@@ -175,7 +176,7 @@ Boolean SRTPCryptographicContext
       // For SRTCP, 8 is the minumum RTCP packet size, but there's also a mandatory
       //   4-byte "E+SRTCP index" word.
 #ifdef DEBUG
-      fprintf(stderr, "SRTPCryptographicContext::processIncomingSRTCPPacket(): Error: Packet size %d is too short for SRTCP!\n", inPacketSize);
+      Log.Error(__FILE__, __LINE__, "SRTPCryptographicContext::processIncomingSRTCPPacket(): Error: Packet size %d is too short for SRTCP!\n", inPacketSize);
 #endif
       break;
     }
@@ -184,7 +185,7 @@ Boolean SRTPCryptographicContext
       = 4/*E+SRTCP index*/ + SRTP_MKI_LENGTH + (weAuthenticate() ? SRTP_AUTH_TAG_LENGTH : 0);
     if (inPacketSize <= numBytesPastEncryption) {
 #ifdef DEBUG
-      fprintf(stderr, "SRTPCryptographicContext::processIncomingSRTCPPacket(): Error: Packet size %d is too short for encrpytion and/or authentication!\n", inPacketSize);
+      Log.Error(__FILE__, __LINE__, "SRTPCryptographicContext::processIncomingSRTCPPacket(): Error: Packet size %d is too short for encrpytion and/or authentication!\n", inPacketSize);
 #endif
       break;
     }
@@ -197,7 +198,7 @@ Boolean SRTPCryptographicContext
 
       if (!verifySRTCPAuthenticationTag(buffer, numBytesToAuthenticate, authenticationTag)) {
 #ifdef DEBUG
-	fprintf(stderr, "SRTPCryptographicContext::processIncomingSRTCPPacket(): Failed to authenticate incoming SRTCP packet!\n");
+	Log.Error(__FILE__, __LINE__, "SRTPCryptographicContext::processIncomingSRTCPPacket(): Failed to authenticate incoming SRTCP packet!\n");
 #endif
 	break;
       }
@@ -213,7 +214,7 @@ Boolean SRTPCryptographicContext
 	unsigned const offsetToEncryptedBytes = 8;
 	if (offsetToEncryptedBytes > numEncryptedBytes) {
 #ifdef DEBUG
-	  fprintf(stderr, "SRTPCryptographicContext::processIncomingSRTCPPacket(): Error: RTCP packet size %d is too small!\n", numEncryptedBytes);
+	  Log.Error(__FILE__, __LINE__, "SRTPCryptographicContext::processIncomingSRTCPPacket(): Error: RTCP packet size %d is too small!\n", numEncryptedBytes);
 #endif
 	  break;
 	}
@@ -256,7 +257,7 @@ Boolean SRTPCryptographicContext
 	// There's a RTP extension header.  Add its size:
 	if (inPacketSize < rtpHeaderSize + 4) {
 #ifdef DEBUG
-	  fprintf(stderr, "SRTPCryptographicContext::processOutgoingSRTPPacket(): Error: Packet size %d is shorter than the minimum specified RTP header size %d!\n", inPacketSize, rtpHeaderSize + 4);
+	  Log.Error(__FILE__, __LINE__, "SRTPCryptographicContext::processOutgoingSRTPPacket(): Error: Packet size %d is shorter than the minimum specified RTP header size %d!\n", inPacketSize, rtpHeaderSize + 4);
 #endif
 	  break;
 	}
@@ -267,7 +268,7 @@ Boolean SRTPCryptographicContext
       unsigned const offsetToEncryptedBytes = rtpHeaderSize;
       if (inPacketSize < offsetToEncryptedBytes) {
 #ifdef DEBUG
-	fprintf(stderr, "SRTPCryptographicContext::processOutgoingSRTPPacket(): Error: Packet size %d is too small (should be >= %d)!\n", inPacketSize, offsetToEncryptedBytes);
+	Log.Error(__FILE__, __LINE__, "SRTPCryptographicContext::processOutgoingSRTPPacket(): Error: Packet size %d is too small (should be >= %d)!\n", inPacketSize, offsetToEncryptedBytes);
 #endif
 	break;
       }

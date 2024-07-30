@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // RTP Sinks
 // Implementation
 
+#include <Log.hh>
 #include "RTPSink.hh"
 #include "Base64.hh"
 #include "GroupsockHelper.hh"
@@ -92,7 +93,7 @@ u_int32_t RTPSink::convertToRTPTimestamp(struct timeval tv) {
 
   u_int32_t const rtpTimestamp = fTimestampBase + timestampIncrement;
 #ifdef DEBUG_TIMESTAMPS
-  fprintf(stderr, "fTimestampBase: 0x%08x, tv: %lu.%06ld\n\t=> RTP timestamp: 0x%08x\n",
+  Log.Error(__FILE__, __LINE__, "fTimestampBase: 0x%08x, tv: %lu.%06ld\n\t=> RTP timestamp: 0x%08x\n",
 	  fTimestampBase, tv.tv_sec, tv.tv_usec, rtpTimestamp);
   fflush(stderr);
 #endif
@@ -240,7 +241,7 @@ void RTPTransmissionStatsDB
     if (stats == NULL) return;
     add(SSRC, stats);
 #ifdef DEBUG_RR
-    fprintf(stderr, "Adding new entry for SSRC %x in RTPTransmissionStatsDB\n", SSRC);
+    Log.Error(__FILE__, __LINE__, "Adding new entry for SSRC %x in RTPTransmissionStatsDB\n", SSRC);
 #endif
   }
 
@@ -326,10 +327,10 @@ void RTPTransmissionStats
   fLastSRTime = lastSRTime;
   fDiffSR_RRTime = diffSR_RRTime;
 #ifdef DEBUG_RR
-  fprintf(stderr, "RTCP RR data (received at %lu.%06ld): lossStats 0x%08x, lastPacketNumReceived 0x%08x, jitter 0x%08x, lastSRTime 0x%08x, diffSR_RRTime 0x%08x\n",
+  Log.Error(__FILE__, __LINE__, "RTCP RR data (received at %lu.%06ld): lossStats 0x%08x, lastPacketNumReceived 0x%08x, jitter 0x%08x, lastSRTime 0x%08x, diffSR_RRTime 0x%08x\n",
           fTimeReceived.tv_sec, fTimeReceived.tv_usec, lossStats, lastPacketNumReceived, jitter, lastSRTime, diffSR_RRTime);
   unsigned rtd = roundTripDelay();
-  fprintf(stderr, "=> round-trip delay: 0x%04x (== %f seconds)\n", rtd, rtd/65536.0);
+  Log.Error(__FILE__, __LINE__, "=> round-trip delay: 0x%04x (== %f seconds)\n", rtd, rtd/65536.0);
 #endif
 
   // Update our counts of the total number of octets and packets sent towards

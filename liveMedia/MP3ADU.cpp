@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // 'ADU' MP3 streams (for improved loss-tolerance)
 // Implementation
 
+#include <Log.hh>
 #include "MP3ADU.hh"
 #include "MP3ADUdescriptor.hh"
 #include "MP3Internals.hh"
@@ -200,7 +201,7 @@ Boolean ADUFromMP3Source::doGetNextFrame1() {
   unsigned descriptorSize
     = fIncludeADUdescriptors ? ADUdescriptor::computeSize(fFrameSize) : 0;
 #ifdef DEBUG
-  fprintf(stderr, "m->a:outputting ADU %d<-%d, nbr:%d, sis:%d, dh:%d, (descriptor size: %d)\n", tailSeg->aduSize, tailSeg->backpointer, fFrameSize, tailSeg->sideInfoSize, tailSeg->dataHere(), descriptorSize);
+  Log.Error(__FILE__, __LINE__, "m->a:outputting ADU %d<-%d, nbr:%d, sis:%d, dh:%d, (descriptor size: %d)\n", tailSeg->aduSize, tailSeg->backpointer, fFrameSize, tailSeg->sideInfoSize, tailSeg->dataHere(), descriptorSize);
 #endif
   if (descriptorSize + fFrameSize > fMaxSize) {
     envir() << "ADUFromMP3Source::doGetNextFrame1(): not enough room ("
@@ -409,7 +410,7 @@ void MP3FromADUSource::insertDummyADUsIfNecessary() {
     if (tailSeg->backpointer > prevADUend) {
       // We need to insert a dummy ADU in front of the tail
 #ifdef DEBUG
-      fprintf(stderr, "a->m:need to insert a dummy ADU (%d, %d, %d) [%d, %d]\n", tailSeg->backpointer, prevADUend, tailSeg->dataHere(), fSegments->headIndex(), fSegments->nextFreeIndex());
+      Log.Error(__FILE__, __LINE__, "a->m:need to insert a dummy ADU (%d, %d, %d) [%d, %d]\n", tailSeg->backpointer, prevADUend, tailSeg->dataHere(), fSegments->headIndex(), fSegments->nextFreeIndex());
 #endif
       tailIndex = fSegments->nextFreeIndex();
       if (!fSegments->insertDummyBeforeTail(prevADUend)) return;
@@ -426,7 +427,7 @@ Boolean MP3FromADUSource::generateFrameFromHeadADU() {
     unsigned index = fSegments->headIndex();
     Segment* seg = &(fSegments->headSegment());
 #ifdef DEBUG
-    fprintf(stderr, "a->m:outputting frame for %d<-%d (fs %d, dh %d), (descriptorSize: %d)\n", seg->aduSize, seg->backpointer, seg->frameSize, seg->dataHere(), seg->descriptorSize);
+    Log.Error(__FILE__, __LINE__, "a->m:outputting frame for %d<-%d (fs %d, dh %d), (descriptorSize: %d)\n", seg->aduSize, seg->backpointer, seg->frameSize, seg->dataHere(), seg->descriptorSize);
 #endif
     unsigned char* toPtr = fTo;
 
@@ -469,7 +470,7 @@ Boolean MP3FromADUSource::generateFrameFromHeadADU() {
 	// we may need some padding bytes beforehand
 	unsigned bytesToZero = startOfData - toOffset;
 #ifdef DEBUG
-	if (bytesToZero > 0) fprintf(stderr, "a->m:outputting %d zero bytes (%d, %d, %d, %d)\n", bytesToZero, startOfData, toOffset, frameOffset, seg->backpointer);
+	if (bytesToZero > 0) Log.Error(__FILE__, __LINE__, "a->m:outputting %d zero bytes (%d, %d, %d, %d)\n", bytesToZero, startOfData, toOffset, frameOffset, seg->backpointer);
 #endif
 	toOffset += bytesToZero;
       }
@@ -478,7 +479,7 @@ Boolean MP3FromADUSource::generateFrameFromHeadADU() {
 	= &seg->dataStart()[seg->headerSize + seg->sideInfoSize + fromOffset];
       unsigned bytesUsedHere = endOfData - startOfData;
 #ifdef DEBUG
-      if (bytesUsedHere > 0) fprintf(stderr, "a->m:outputting %d bytes from %d<-%d\n", bytesUsedHere, seg->aduSize, seg->backpointer);
+      if (bytesUsedHere > 0) Log.Error(__FILE__, __LINE__, "a->m:outputting %d bytes from %d<-%d\n", bytesUsedHere, seg->aduSize, seg->backpointer);
 #endif
       memmove(toPtr + toOffset, fromPtr, bytesUsedHere);
       toOffset += bytesUsedHere;
@@ -538,7 +539,7 @@ void SegmentQueue::sqAfterGettingSegment(void* clientData,
   if (segQueue->sqAfterGettingCommon(seg, numBytesRead)) {
 #ifdef DEBUG
     char const* direction = segQueue->fDirectionIsToADU ? "m->a" : "a->m";
-    fprintf(stderr, "%s:read frame %d<-%d, fs:%d, sis:%d, dh:%d, (descriptor size: %d)\n", direction, seg.aduSize, seg.backpointer, seg.frameSize, seg.sideInfoSize, seg.dataHere(), seg.descriptorSize);
+    Log.Error(__FILE__, __LINE__, "%s:read frame %d<-%d, fs:%d, sis:%d, dh:%d, (descriptor size: %d)\n", direction, seg.aduSize, seg.backpointer, seg.frameSize, seg.sideInfoSize, seg.dataHere(), seg.descriptorSize);
 #endif
   }
 

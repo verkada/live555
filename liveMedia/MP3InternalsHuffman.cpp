@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // MP3 internal implementation details (Huffman encoding)
 // Implementation
 
+#include <Log.hh>
 #include "MP3InternalsHuffman.hh"
 #include <stdio.h>
 #include <string.h>
@@ -64,7 +65,7 @@ void updateSideInfoForHuffman(MP3SideInfo& sideInfo, Boolean isMPEG2,
 
   ++debugCount;
 #ifdef DEBUG
-  fprintf(stderr, "usifh-start: p23L0: %d, p23L1: %d\n", p23L0, p23L1);
+  Log.Error(__FILE__, __LINE__, "usifh-start: p23L0: %d, p23L1: %d\n", p23L0, p23L1);
 #endif
 
   /* Process granule 0 */
@@ -76,7 +77,7 @@ void updateSideInfoForHuffman(MP3SideInfo& sideInfo, Boolean isMPEG2,
 
     /* Begin by computing new sizes for parts a & b (& their truncations) */
 #ifdef DEBUG
-    fprintf(stderr, "usifh-0: %d, %d:%d, %d:%d, %d:%d, %d:%d, %d:%d\n",
+    Log.Error(__FILE__, __LINE__, "usifh-0: %d, %d:%d, %d:%d, %d:%d, %d:%d, %d:%d\n",
 	    hei.numSamples,
 	    sfLength/8, sfLength%8,
 	    hei.reg1Start/8, hei.reg1Start%8,
@@ -116,7 +117,7 @@ void updateSideInfoForHuffman(MP3SideInfo& sideInfo, Boolean isMPEG2,
     part23Length0a -= part23Length0aTruncation;
     part23Length0b -= part23Length0bTruncation;
 #ifdef DEBUG
-    fprintf(stderr, "usifh-0: interim sizes: %d (%d), %d (%d)\n",
+    Log.Error(__FILE__, __LINE__, "usifh-0: interim sizes: %d (%d), %d (%d)\n",
 	    part23Length0a, part23Length0aTruncation,
 	    part23Length0b, part23Length0bTruncation);
 #endif
@@ -132,7 +133,7 @@ void updateSideInfoForHuffman(MP3SideInfo& sideInfo, Boolean isMPEG2,
       adjustment = part23Length0a - hei.allBitOffsets[i];
     }
 #ifdef DEBUG
-    fprintf(stderr, "%d usifh-0: adjustment 1: %d\n", debugCount, adjustment);
+    Log.Error(__FILE__, __LINE__, "%d usifh-0: adjustment 1: %d\n", debugCount, adjustment);
 #endif
     part23Length0a -= adjustment;
     part23Length0aTruncation += adjustment;
@@ -158,7 +159,7 @@ void updateSideInfoForHuffman(MP3SideInfo& sideInfo, Boolean isMPEG2,
                    - hei.allBitOffsets[j];
     }
 #ifdef DEBUG
-    fprintf(stderr, "%d usifh-0: adjustment 2: %d\n", debugCount, adjustment);
+    Log.Error(__FILE__, __LINE__, "%d usifh-0: adjustment 2: %d\n", debugCount, adjustment);
 #endif
     if (adjustment > part23Length0b) adjustment = part23Length0b; /*sanity*/
     part23Length0b -= adjustment;
@@ -189,7 +190,7 @@ void updateSideInfoForHuffman(MP3SideInfo& sideInfo, Boolean isMPEG2,
 
     /* Begin by computing new sizes for parts a & b (& their truncations) */
 #ifdef DEBUG
-    fprintf(stderr, "usifh-1: %d, %d:%d, %d:%d, %d:%d, %d:%d, %d:%d\n",
+    Log.Error(__FILE__, __LINE__, "usifh-1: %d, %d:%d, %d:%d, %d:%d, %d:%d, %d:%d\n",
 	    hei.numSamples,
 	    sfLength/8, sfLength%8,
 	    hei.reg1Start/8, hei.reg1Start%8,
@@ -228,7 +229,7 @@ void updateSideInfoForHuffman(MP3SideInfo& sideInfo, Boolean isMPEG2,
     part23Length1a -= part23Length1aTruncation;
     part23Length1b -= part23Length1bTruncation;
 #ifdef DEBUG
-    fprintf(stderr, "usifh-1: interim sizes: %d (%d), %d (%d)\n",
+    Log.Error(__FILE__, __LINE__, "usifh-1: interim sizes: %d (%d), %d (%d)\n",
 	    part23Length1a, part23Length1aTruncation,
 	    part23Length1b, part23Length1bTruncation);
 #endif
@@ -244,7 +245,7 @@ void updateSideInfoForHuffman(MP3SideInfo& sideInfo, Boolean isMPEG2,
       adjustment = part23Length1a - hei.allBitOffsets[i];
     }
 #ifdef DEBUG
-    fprintf(stderr, "%d usifh-1: adjustment 0: %d\n", debugCount, adjustment);
+    Log.Error(__FILE__, __LINE__, "%d usifh-1: adjustment 0: %d\n", debugCount, adjustment);
 #endif
     part23Length1a -= adjustment;
     part23Length1aTruncation += adjustment;
@@ -269,7 +270,7 @@ void updateSideInfoForHuffman(MP3SideInfo& sideInfo, Boolean isMPEG2,
                    - hei.allBitOffsets[j];
     }
 #ifdef DEBUG
-    fprintf(stderr, "%d usifh-1: adjustment 1: %d\n", debugCount, adjustment);
+    Log.Error(__FILE__, __LINE__, "%d usifh-1: adjustment 1: %d\n", debugCount, adjustment);
 #endif
     if (adjustment > part23Length1b) adjustment = part23Length1b; /*sanity*/
     part23Length1b -= adjustment;
@@ -281,7 +282,7 @@ void updateSideInfoForHuffman(MP3SideInfo& sideInfo, Boolean isMPEG2,
     }
   }
 #ifdef DEBUG
-  fprintf(stderr, "usifh-end, new vals: %d (%d), %d (%d), %d (%d), %d (%d)\n",
+  Log.Error(__FILE__, __LINE__, "usifh-end, new vals: %d (%d), %d (%d), %d (%d), %d (%d)\n",
 	  part23Length0a, part23Length0aTruncation,
 	  part23Length0b, part23Length0bTruncation,
 	  part23Length1a, part23Length1aTruncation,
@@ -356,7 +357,7 @@ static int read_decoder_table(unsigned char* fi) {
       return n;
     else if (strcmp(command,".table")!=0) {
 #ifdef DEBUG
-      fprintf(stderr,"huffman table %u data corrupted\n",n);
+      Log.Error(__FILE__, __LINE__,"huffman table %u data corrupted\n",n);
 #endif
       return -1;
     }
@@ -365,7 +366,7 @@ static int read_decoder_table(unsigned char* fi) {
     sscanf(rsf_ht[n].tablename,"%u",&nn);
     if (nn != n) {
 #ifdef DEBUG
-      fprintf(stderr,"wrong table number %u\n",n);
+      Log.Error(__FILE__, __LINE__,"wrong table number %u\n",n);
 #endif
       return(-2);
     }
@@ -381,7 +382,7 @@ static int read_decoder_table(unsigned char* fi) {
       if ( (rsf_ht[n].xlen != rsf_ht[t].xlen) ||
            (rsf_ht[n].ylen != rsf_ht[t].ylen)  ) {
 #ifdef DEBUG
-        fprintf(stderr,"wrong table %u reference\n",n);
+        Log.Error(__FILE__, __LINE__,"wrong table %u reference\n",n);
 #endif
         return (-3);
       };
@@ -395,7 +396,7 @@ static int read_decoder_table(unsigned char* fi) {
         new unsigned char[2*(rsf_ht[n].treelen)];
       if ((rsf_ht[n].val == NULL) && ( rsf_ht[n].treelen != 0 )){
 #ifdef DEBUG
-    	fprintf(stderr, "heaperror at table %d\n",n);
+    	Log.Error(__FILE__, __LINE__, "heaperror at table %d\n",n);
 #endif
 	return -1;
       }
@@ -410,7 +411,7 @@ static int read_decoder_table(unsigned char* fi) {
     }
     else {
 #ifdef DEBUG
-      fprintf(stderr,"huffman decodertable error at table %d\n",n);
+      Log.Error(__FILE__, __LINE__,"huffman decodertable error at table %d\n",n);
 #endif
     }
   }
@@ -424,7 +425,7 @@ static void initialize_huffman() {
 
    if (read_decoder_table(huffdec) != HTN) {
 #ifdef DEBUG
-      fprintf(stderr,"decoder table read error\n");
+      Log.Error(__FILE__, __LINE__,"decoder table read error\n");
 #endif
       return;
       }
@@ -821,7 +822,7 @@ static void buildHuffmanEncodingTable(struct huffcodetab* h) {
     }
   }
 #ifdef DEBUG
-  fprintf(stderr, "Didn't find enough entries!\n"); // shouldn't happen
+  Log.Error(__FILE__, __LINE__, "Didn't find enough entries!\n"); // shouldn't happen
 #endif
 }
 
@@ -887,7 +888,7 @@ static void rsf_huffman_encoder(BitVector& bv,
     // Sanity check: x,y,v,w must all be 0 or 1:
     if (x>1 || y>1 || v>1 || w>1) {
 #ifdef DEBUG
-      fprintf(stderr, "rsf_huffman_encoder quad sanity check fails: %x,%x,%x,%x\n", x, y, v, w);
+      Log.Error(__FILE__, __LINE__, "rsf_huffman_encoder quad sanity check fails: %x,%x,%x,%x\n", x, y, v, w);
 #endif
     }
 
@@ -902,7 +903,7 @@ static void rsf_huffman_encoder(BitVector& bv,
     // Sanity check: v and w must be 0:
     if (v != 0 || w != 0) {
 #ifdef DEBUG
-      fprintf(stderr, "rsf_huffman_encoder dual sanity check 1 fails: %x,%x,%x,%x\n", x, y, v, w);
+      Log.Error(__FILE__, __LINE__, "rsf_huffman_encoder dual sanity check 1 fails: %x,%x,%x,%x\n", x, y, v, w);
 #endif
     }
 
@@ -912,7 +913,7 @@ static void rsf_huffman_encoder(BitVector& bv,
     // Sanity check: x and y must be <= 255:
     if (x > 255 || y > 255) {
 #ifdef DEBUG
-      fprintf(stderr, "rsf_huffman_encoder dual sanity check 2 fails: %x,%x,%x,%x\n", x, y, v, w);
+      Log.Error(__FILE__, __LINE__, "rsf_huffman_encoder dual sanity check 2 fails: %x,%x,%x,%x\n", x, y, v, w);
 #endif
     }
 
@@ -930,7 +931,7 @@ static void rsf_huffman_encoder(BitVector& bv,
       linbitsX = (unsigned)(x - xl1);
       if (linbitsX > h->linmax) {
 #ifdef DEBUG
-	fprintf(stderr,"warning: Huffman X table overflow\n");
+	Log.Error(__FILE__, __LINE__,"warning: Huffman X table overflow\n");
 #endif
 	linbitsX = h->linmax;
       };
@@ -941,7 +942,7 @@ static void rsf_huffman_encoder(BitVector& bv,
 	linbitsY = (unsigned)(y - yl1);
 	if (linbitsY > h->linmax) {
 #ifdef DEBUG
-	  fprintf(stderr,"warning: Huffman Y table overflow\n");
+	  Log.Error(__FILE__, __LINE__,"warning: Huffman Y table overflow\n");
 #endif
 	  linbitsY = h->linmax;
 	};
@@ -963,7 +964,7 @@ static void rsf_huffman_encoder(BitVector& bv,
       linbitsY = y-yl1;
       if (linbitsY > h->linmax) {
 #ifdef DEBUG
-	fprintf(stderr,"warning: Huffman Y table overflow\n");
+	Log.Error(__FILE__, __LINE__,"warning: Huffman Y table overflow\n");
 #endif
 	linbitsY = h->linmax;
       };
