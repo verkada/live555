@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2022 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2024 Live Networks, Inc.  All rights reserved.
 // State encapsulating a TLS connection
 // Implementation
 
@@ -61,6 +61,14 @@ int TLSState::read(u_int8_t* buffer, unsigned bufferSize) {
   return result;
 #else
   return 0;
+#endif
+}
+
+void TLSState::nullify() {
+#ifndef NO_OPENSSL
+  isNeeded = fHasBeenSetup = False;
+  fCtx = NULL;
+  fCon = NULL;
 #endif
 }
 
@@ -174,6 +182,18 @@ void ServerTLSState
 #endif
 }
 
+void ServerTLSState::assignStateFrom(ServerTLSState const& from) {
+#ifndef NO_OPENSSL
+  isNeeded = from.isNeeded;
+  fHasBeenSetup = from.fHasBeenSetup;
+  fCtx = from.fCtx;
+  fCon = from.fCon;
+
+  fCertificateFileName = from.fCertificateFileName;
+  fPrivateKeyFileName = from.fPrivateKeyFileName;
+#endif
+}
+
 int ServerTLSState::accept(int socketNum) {
 #ifndef NO_OPENSSL
   if (!fHasBeenSetup && !setup(socketNum)) return -1; // error
@@ -208,7 +228,7 @@ Boolean ServerTLSState::setup(int socketNum) {
 
     if (SSL_CTX_set_ecdh_auto(fCtx, 1) != 1) break;
 
-    if (SSL_CTX_use_certificate_file(fCtx, fCertificateFileName, SSL_FILETYPE_PEM) != 1) break;
+    if (SSL_CTX_use_certificate_chain_file(fCtx, fCertificateFileName) != 1) break;
 
     if (SSL_CTX_use_PrivateKey_file(fCtx, fPrivateKeyFileName, SSL_FILETYPE_PEM) != 1) break;
 

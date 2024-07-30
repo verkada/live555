@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2022 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2024 Live Networks, Inc.  All rights reserved.
 // A data structure that represents a session that consists of
 // potentially multiple (audio and/or video) sub-sessions
 // (This data structure is used for media *streamers* - i.e., servers.
@@ -69,9 +69,9 @@ public:
 
   void deleteAllSubsessions();
     // Removes and deletes all subsessions added by "addSubsession()", returning us to an 'empty' state
-    // Note: If you have already added this "ServerMediaSession" to a "RTSPServer" then, before calling this function,
+    // Note: If you have already added this "ServerMediaSession" to a server then, before calling this function,
     //   you must first close any client connections that use it,
-    //   by calling "RTSPServer::closeAllClientSessionsForServerMediaSession()".
+    //   by calling "GenericMediaServer::closeAllClientSessionsForServerMediaSession()".
 
   Boolean streamingUsesSRTP; // by default, False
   Boolean streamingIsEncrypted; // by default, False
@@ -165,7 +165,7 @@ public:
   virtual float getCurrentNPT(void* streamToken);
   virtual FramedSource* getStreamSource(void* streamToken);
   virtual void getRTPSinkandRTCP(void* streamToken,
-				 RTPSink const*& rtpSink, RTCPInstance const*& rtcp) = 0;
+				 RTPSink*& rtpSink, RTCPInstance*& rtcp) = 0;
      // Returns pointers to the "RTPSink" and "RTCPInstance" objects for "streamToken".
      // (This can be useful if you want to get the associated 'Groupsock' objects, for example.)
      // You must not delete these objects, or start/stop playing them; instead, that is done
