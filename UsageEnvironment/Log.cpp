@@ -70,16 +70,15 @@ string LogLevelAsString(LogLevel logLevel) {
   }
 }
 
-void _Log::OutputToFile(const string filePath) {
-  currLogFilePath = filePath;
+_Log::_Log(const string logDirectory) : logLevel(LogLevelDebug) {
+  SetTmpLogDir(logDirectory);
 }
 
-void _Log::OutputToStdout(bool toStdout) {
-  logToStdout = toStdout;
-}
+void _Log::SetTmpLogDir(std::string logDirectory) {
+  lock_guard<mutex> changeTmpDirGuard(logMutex);
 
-_Log::_Log(const string logDirectory) : logFileDir(logDirectory), logToStdout(false), logLevel(LogLevelDebug) {
-  if (kMaxLogs == 0) {  // Use stdout
+  logFileDir = logDirectory;
+  if (kMaxLogs == 0 || logDirectory.empty()) {  // Use stdout
     currLogFilePath = "";
     logToStdout = true;
     return;
@@ -96,6 +95,8 @@ _Log::_Log(const string logDirectory) : logFileDir(logDirectory), logToStdout(fa
 
   // Set log file to 0 again
   SetLogFileNum(0);
+  logToStdout = false;
+  fflush(stdout);
 }
 
 // Caller assumed to be handling logMutex properly
@@ -113,6 +114,7 @@ FILE* _Log::AcquireFile() {
     }
     return logFileHandle;
   }
+  fflush(stdout);
 }
 
 void _Log::SetLogFileNum(unsigned int logNum) {
@@ -141,8 +143,14 @@ void _Log::NextLogFile() {
 
 void _Log::BackupLog(const string backupFilePath) {
   lock_guard<mutex> backupLockGuard(logMutex);
+
+  if (!logFileDir.empty()) {
+    printf("Cannot backup live555 logs as it is not enabled.\n");
+    return;
+  }
+
   if (access(backupFilePath.c_str(), F_OK) == 0 && remove(backupFilePath.c_str()) < 0) {
-    fprintf(stderr, "Couldn't remove old backup file in %s%s\n", backupFilePath, strerror(errno));
+    fprintf(stderr, "Couldn't remove old backup file in %s %s\n", backupFilePath.c_str(), strerror(errno));
     return;
   }
 

@@ -46,9 +46,8 @@ public:
   ~_Log() {}
 
   void BackupLog(const std::string backupFileName);
-  void OutputToFile(const std::string filePath);
-  void OutputToStdout(bool toStdout);
   void SetLevel(LogLevel level);
+  void SetTmpLogDir(std::string logDirectory);
 
   void Panic(const std::string filePath, int line, const char* format, ...);
   void Fatal(const std::string filePath, int line, const char* format, ...);

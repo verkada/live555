@@ -21,4 +21,4 @@ jobs:
       run: ./genMakefiles linux
 
     - name: Make All live555 targets
-      run: make CPPFLAGS='-DLOG_FILE_TMP_DIR="\"/test/path\""'
+      run: make CPPFLAGS='-DDEBUG -DDEBUG_SEND'
