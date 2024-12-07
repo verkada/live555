@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2024, Live Networks, Inc.  All rights reserved
+// Copyright (c) 1996-2025, Live Networks, Inc.  All rights reserved
 //
 // The SRTP 'Cryptographic Context', used in all of our uses of SRTP.
 // Implementation
@@ -74,7 +74,7 @@ Boolean SRTPCryptographicContext
 
     if (!fHaveReceivedSRTPPackets) {
       // First time:
-      nextROC = thisPacketsROC = fReceptionROC = 0;
+      nextROC = thisPacketsROC = fReceptionROC = fMIKEYState.initialROC();
       nextHighRTPSeqNum = rtpSeqNum;
     } else {
       // Check whether the sequence number has rolled over, or is out-of-order:
@@ -275,7 +275,7 @@ Boolean SRTPCryptographicContext
       // Figure out this packet's 'index' (ROC|rtpSeqNum):
       u_int16_t const rtpSeqNum = (buffer[2]<<8)|buffer[3];
       if (!fHaveSentSRTPPackets) {
-	fSendingROC = 0;
+	fSendingROC = fMIKEYState.initialROC();
 	fHaveSentSRTPPackets = True; // for the future
       } else {
 	if (rtpSeqNum == 0) ++fSendingROC; // increment the ROC when the RTP seq num rolls over
@@ -366,6 +366,14 @@ Boolean SRTPCryptographicContext
   
   // An error occurred:
   return False;
+}
+
+u_int32_t SRTPCryptographicContext::sendingROC() const {
+#ifndef NO_OPENSSL
+  return fSendingROC;
+#else
+  return 0;
+#endif
 }
 
 #ifndef NO_OPENSSL
