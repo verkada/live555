@@ -181,6 +181,7 @@ public:
 
   virtual Boolean exceedsMaxStreams();
   virtual void auditLog(const char* type, const char* address, u_int32_t session_id);
+  virtual void notifyClientUserAgent(const char* userAgent, u_int32_t session_id);
 
 protected: // we're a virtual base class
   ServerMediaSubsession(UsageEnvironment& env);

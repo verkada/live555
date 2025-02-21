@@ -24,6 +24,8 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "Base64.hh"
 #include <GroupsockHelper.hh>
 
+#define USER_AGENT_BUFFER_LENGTH 200
+
 ////////// RTSPServer implementation //////////
 
 RTSPServer*
@@ -1623,6 +1625,22 @@ void RTSPServer::RTSPClientSession
     }
     AddressString destAddrStr(destinationAddress);
     AddressString sourceAddrStr(sourceAddr);
+
+    // Extract and report the user agent name (client software)
+    char userAgentName[USER_AGENT_BUFFER_LENGTH] = {0};
+    const char* userAgentPrefix = "User-Agent: ";
+    const char* start = strstr(fFullRequestStr, userAgentPrefix);
+    if (start) {
+      start += strlen(userAgentPrefix);
+      const char* end = strpbrk(start, "\r\n");
+      size_t len = (end ? (size_t)(end - start) : strlen(start));
+      if (len > USER_AGENT_BUFFER_LENGTH - 1) {
+        len = USER_AGENT_BUFFER_LENGTH - 1;
+      }
+      memcpy(userAgentName, start, len);
+      userAgentName[len] = '\0';
+    }
+    subsession->notifyClientUserAgent(userAgentName, fOurSessionId);
 
     subsession->auditLog("START", destAddrStr.val(), fOurSessionId);
 
