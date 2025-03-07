@@ -348,16 +348,13 @@ Boolean RTPInterface::sendRTPorRTCPPacketOverTCP(u_int8_t* packet, unsigned pack
 #endif
   // Send a RTP/RTCP packet over TCP, using the encoding defined in RFC 2326, section 10.12:
   //     $<streamChannelId><packetSize><packet>
-  // (If the initial "send()" of '$<streamChannelId><packetSize>' succeeds, then we force
-  // the subsequent "send()" for the <packet> data to succeed, even if we have to do so with
-  // a blocking "send()".)
   do {
     u_int8_t framingHeader[4];
     framingHeader[0] = '$';
     framingHeader[1] = streamChannelId;
     framingHeader[2] = (u_int8_t) ((packetSize&0xFF00)>>8);
     framingHeader[3] = (u_int8_t) (packetSize&0xFF);
-    if (!sendDataOverTCP(socketNum, tlsState, framingHeader, 4, False)) break;
+    if (!sendDataOverTCP(socketNum, tlsState, framingHeader, 4, True)) break;
 
     if (!sendDataOverTCP(socketNum, tlsState, packet, packetSize, True)) break;
 #ifdef DEBUG_SEND
